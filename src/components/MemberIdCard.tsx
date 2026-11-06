@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Shield, Sparkles, Copy, Check, QrCode, Award } from 'lucide-react';
-import { ClanMember } from '../data/clanData';
+import { ClanMember, CLAN_LOGO_URL, CLAN_MOTTO, CLAN_FOUNDED_DATE } from '../data/clanData';
 import { sounds } from '../utils/soundEffects';
 
 interface MemberIdCardProps {
@@ -26,27 +26,32 @@ export const MemberIdCard: React.FC<MemberIdCardProps> = ({ member, lang }) => {
         <h3 className="text-xl font-black text-white font-heading">
           {lang === 'tl' ? 'Digital Clan ID Pass' : 'Digital Clan ID Pass'}
         </h3>
-        <p className="text-xs text-slate-400">
-          {lang === 'tl' ? 'Patunay ng iyong opisyal na estado sa Z.V.R' : 'Proof of verified membership in Z.V.R'}
+        <p className="text-xs text-purple-400 font-semibold tracking-wider uppercase">
+          {CLAN_MOTTO}
         </p>
       </div>
 
       {/* The Physical-Style Pass Card */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-950 to-sky-950 border border-sky-500/30 rounded-3xl p-6 shadow-2xl">
+      <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-purple-950/60 to-slate-950 border border-purple-500/40 rounded-3xl p-6 shadow-2xl">
         {/* Holographic accent glow */}
-        <div className="absolute top-0 right-0 w-44 h-44 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute top-0 right-0 w-44 h-44 bg-purple-500/15 rounded-full blur-3xl pointer-events-none"></div>
 
         {/* Top Header of Card */}
-        <div className="flex items-center justify-between border-b border-slate-800/80 pb-4 mb-5">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-sky-500/20 border border-sky-500/40 flex items-center justify-center text-sky-400">
-              <Shield className="w-4 h-4" />
+        <div className="flex items-center justify-between border-b border-purple-900/50 pb-4 mb-5">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl overflow-hidden border border-purple-400/50 bg-purple-950/80 shadow-md shrink-0">
+              <img
+                src={CLAN_LOGO_URL}
+                alt="ZVR Logo"
+                className="w-full h-full object-cover"
+                referrerPolicy="no-referrer"
+              />
             </div>
             <div>
-              <div className="text-base font-black tracking-wider text-sky-400 font-heading">
+              <div className="text-base font-black tracking-wider text-purple-300 font-heading">
                 Z.V.R
               </div>
-              <div className="text-[9px] uppercase tracking-widest text-slate-400 font-mono">
+              <div className="text-[9px] uppercase tracking-widest text-purple-300/80 font-mono">
                 OFFICIAL CLAN PASS
               </div>
             </div>
@@ -101,9 +106,9 @@ export const MemberIdCard: React.FC<MemberIdCardProps> = ({ member, lang }) => {
         </div>
 
         {/* Bottom Card Footer */}
-        <div className="mt-6 pt-4 border-t border-slate-800/80 flex items-center justify-between text-[10px] text-slate-500 font-mono">
+        <div className="mt-6 pt-4 border-t border-purple-900/40 flex items-center justify-between text-[10px] text-purple-300/70 font-mono">
           <span>CODE: ZVR-2025</span>
-          <span>EST. SEPT 2025</span>
+          <span>EST. 9-15-25 (SEPT 15, 2025)</span>
         </div>
       </div>
 

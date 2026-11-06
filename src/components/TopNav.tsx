@@ -1,6 +1,6 @@
 import React from 'react';
-import { Shield, MessageCircle, Volume2, VolumeX, Globe } from 'lucide-react';
-import { ClanMember, MESSENGER_GC_LINK } from '../data/clanData';
+import { Shield, MessageCircle, Volume2, VolumeX, Globe, Music2 } from 'lucide-react';
+import { ClanMember, TIKTOK_GROUP_LINK, CLAN_FB_PROFILE_LINK, CLAN_LOGO_URL } from '../data/clanData';
 import { sounds } from '../utils/soundEffects';
 
 interface TopNavProps {
@@ -39,7 +39,7 @@ export const TopNav: React.FC<TopNavProps> = ({
   ];
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-slate-800 bg-slate-950/80 backdrop-blur-md">
+    <header className="sticky top-0 z-40 w-full border-b border-purple-900/30 bg-slate-950/85 backdrop-blur-md">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4 md:gap-8">
         {/* Zone 1: Brand Wordmark */}
         <button
@@ -47,14 +47,24 @@ export const TopNav: React.FC<TopNavProps> = ({
             sounds.playClick();
             setCurrentTab('login');
           }}
-          className="flex items-center gap-2.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 rounded-lg shrink-0"
+          className="flex items-center gap-2.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 rounded-lg shrink-0 group"
         >
-          <div className="w-9 h-9 rounded-lg bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400 font-black text-lg shadow-[0_0_15px_rgba(56,189,248,0.2)]">
-            <Shield className="w-5 h-5 text-sky-400" />
+          <div className="w-10 h-10 rounded-xl overflow-hidden border border-purple-500/40 bg-purple-950/50 flex items-center justify-center shadow-[0_0_16px_rgba(168,85,247,0.35)] shrink-0">
+            <img
+              src={CLAN_LOGO_URL}
+              alt="Z.V.R Official Clan Logo"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+              referrerPolicy="no-referrer"
+            />
           </div>
-          <span className="text-xl font-black tracking-wider text-sky-400 font-heading whitespace-nowrap shrink-0">
-            Z.V.R
-          </span>
+          <div className="flex flex-col">
+            <span className="text-xl font-black tracking-wider text-purple-300 group-hover:text-purple-200 font-heading whitespace-nowrap shrink-0 transition-colors">
+              Z.V.R
+            </span>
+            <span className="text-[9px] tracking-widest text-purple-400/80 uppercase font-semibold hidden sm:inline">
+              Zeal · Victory · Respect
+            </span>
+          </div>
         </button>
 
         {/* Zone 2: Navigation Links */}
@@ -70,7 +80,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                 }}
                 className={`px-3 py-1.5 rounded-lg text-xs md:text-sm transition-colors whitespace-nowrap shrink-0 ${
                   isActive
-                    ? 'text-sky-400 bg-sky-500/10 font-semibold'
+                    ? 'text-purple-300 bg-purple-500/15 font-semibold'
                     : 'text-slate-400 hover:text-slate-100 hover:bg-slate-900/50'
                 }`}
               >
@@ -89,7 +99,7 @@ export const TopNav: React.FC<TopNavProps> = ({
             className="p-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 rounded-lg transition-colors"
             title={isMuted ? 'Unmute sounds' : 'Mute sounds'}
           >
-            {isMuted ? <VolumeX className="w-4 h-4 text-slate-500" /> : <Volume2 className="w-4 h-4 text-sky-400" />}
+            {isMuted ? <VolumeX className="w-4 h-4 text-slate-500" /> : <Volume2 className="w-4 h-4 text-purple-400" />}
           </button>
 
           {/* Language selector */}
@@ -101,9 +111,21 @@ export const TopNav: React.FC<TopNavProps> = ({
             className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-slate-300 hover:text-white bg-slate-900/80 border border-slate-800 rounded-lg transition-colors whitespace-nowrap shrink-0"
             title="Palitan ang wika / Change language"
           >
-            <Globe className="w-3.5 h-3.5 text-sky-400" />
+            <Globe className="w-3.5 h-3.5 text-purple-400" />
             <span>{lang === 'tl' ? 'FIL' : 'ENG'}</span>
           </button>
+
+          {/* Official Facebook Profile Link */}
+          <a
+            href={CLAN_FB_PROFILE_LINK}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => sounds.playClick()}
+            className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-slate-300 hover:text-white bg-slate-900/80 border border-purple-900/40 hover:border-purple-500/50 rounded-lg transition-colors whitespace-nowrap shrink-0"
+            title="Official Z.V.R Facebook Profile"
+          >
+            <span>FB Profile</span>
+          </a>
 
           {/* Primary Action Button */}
           {loggedInMember ? (
@@ -118,15 +140,14 @@ export const TopNav: React.FC<TopNavProps> = ({
             </button>
           ) : (
             <a
-              href={MESSENGER_GC_LINK}
+              href={TIKTOK_GROUP_LINK}
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => sounds.playClick()}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-500 rounded-lg shadow-sm transition-colors whitespace-nowrap shrink-0"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 rounded-lg shadow-sm transition-all whitespace-nowrap shrink-0"
             >
-              <MessageCircle className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">Messenger GC</span>
-              <span className="md:hidden">GC</span>
+              <Music2 className="w-3.5 h-3.5 text-pink-200" />
+              <span>TikTok Group</span>
             </a>
           )}
         </div>

@@ -12,8 +12,8 @@ import { MemberRoster } from './components/MemberRoster';
 import { TagGenerator } from './components/TagGenerator';
 import { ClanRules } from './components/ClanRules';
 import { MemberIdCard } from './components/MemberIdCard';
-import { INITIAL_MEMBERS, ClanMember, MESSENGER_GC_LINK } from './data/clanData';
-import { Shield, Sparkles, MessageCircle, Heart } from 'lucide-react';
+import { INITIAL_MEMBERS, ClanMember, TIKTOK_GROUP_LINK, CLAN_FB_PROFILE_LINK } from './data/clanData';
+import { Shield, Sparkles, MessageCircle, Heart, UserCheck, Music2 } from 'lucide-react';
 import { sounds } from './utils/soundEffects';
 
 export default function App() {
@@ -58,11 +58,12 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0f172a] text-slate-100 flex flex-col relative overflow-x-hidden selection:bg-sky-500 selection:text-white">
+    <div className="min-h-screen bg-[#0b0f19] text-slate-100 flex flex-col relative overflow-x-hidden selection:bg-purple-500 selection:text-white">
       {/* Ambient background glow */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[650px] h-[650px] bg-sky-500/10 rounded-full blur-[140px] animate-pulse-slow"></div>
-        <div className="absolute bottom-0 right-0 w-[450px] h-[450px] bg-indigo-500/5 rounded-full blur-[130px]"></div>
+        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[700px] bg-purple-600/15 rounded-full blur-[150px] animate-pulse-slow"></div>
+        <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-fuchsia-600/10 rounded-full blur-[140px]"></div>
+        <div className="absolute top-1/2 left-0 w-[400px] h-[400px] bg-indigo-600/10 rounded-full blur-[130px]"></div>
       </div>
 
       {/* Top Bar */}
@@ -131,14 +132,14 @@ export default function App() {
       />
 
       {/* Footer */}
-      <footer className="relative z-10 border-t border-slate-800/80 bg-slate-950/60 py-6 px-4">
+      <footer className="relative z-10 border-t border-purple-900/30 bg-slate-950/70 py-6 px-4">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
           <div className="flex items-center gap-2">
-            <span className="font-bold text-sky-400 font-heading">Z.V.R CLAN</span>
+            <span className="font-bold text-purple-300 font-heading">Z.V.R</span>
             <span>·</span>
-            <span>Est. September 15, 2025</span>
+            <span className="text-purple-400/80 font-medium">Zeal · Victory · Respect</span>
             <span>·</span>
-            <span className="hidden md:inline">Lakas ng Pagkakaisa</span>
+            <span>EST. 9-15-25</span>
           </div>
 
           <div className="flex items-center gap-4">
@@ -147,18 +148,27 @@ export default function App() {
                 sounds.playClick();
                 setIsForgotModalOpen(true);
               }}
-              className="hover:text-sky-400 transition-colors"
+              className="hover:text-purple-300 transition-colors"
             >
               {lang === 'tl' ? 'Tulong sa Password' : 'Password Help'}
             </button>
             <a
-              href={MESSENGER_GC_LINK}
+              href={CLAN_FB_PROFILE_LINK}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sky-400 hover:text-sky-300 hover:underline transition-colors flex items-center gap-1"
+              className="text-slate-400 hover:text-purple-300 transition-colors flex items-center gap-1"
             >
-              <MessageCircle className="w-3 h-3" />
-              <span>Messenger GC</span>
+              <UserCheck className="w-3.5 h-3.5 text-purple-400" />
+              <span>FB Profile</span>
+            </a>
+            <a
+              href={TIKTOK_GROUP_LINK}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-purple-400 hover:text-purple-300 hover:underline transition-colors flex items-center gap-1 font-semibold"
+            >
+              <Music2 className="w-3.5 h-3.5 text-pink-400" />
+              <span>TikTok Group</span>
             </a>
           </div>
         </div>

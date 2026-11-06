@@ -9,7 +9,13 @@ export interface ClanMember {
 }
 
 export const CLAN_PASSCODE = "ZVR09152025";
-export const MESSENGER_GC_LINK = "https://m.me/j/jqFOlcjcyHiKLSUN/?send_source=gc%3Acopy_invite_link_t";
+export const TIKTOK_GROUP_LINK = "https://tiktok.me/group/ZSyTCjAXC/";
+export const CLAN_GROUP_LINK = "https://tiktok.me/group/ZSyTCjAXC/";
+export const MESSENGER_GC_LINK = "https://tiktok.me/group/ZSyTCjAXC/";
+export const CLAN_FB_PROFILE_LINK = "https://www.facebook.com/profile.php?id=61590405043340";
+export const CLAN_LOGO_URL = "/assets/aistudio/received_1468183855209692_5a0a5784.jpeg";
+export const CLAN_MOTTO = "Zeal • Victory • Respect";
+export const CLAN_FOUNDED_DATE = "9-15-25";
 
 export const INITIAL_MEMBERS: ClanMember[] = [
   // Owners & Admins

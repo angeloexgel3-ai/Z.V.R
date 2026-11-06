@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Shield, Eye, EyeOff, AlertCircle, Sparkles, CheckCircle2, User, KeyRound, ExternalLink } from 'lucide-react';
-import { ClanMember, CLAN_PASSCODE, MESSENGER_GC_LINK } from '../data/clanData';
+import { ClanMember, CLAN_PASSCODE, TIKTOK_GROUP_LINK, CLAN_LOGO_URL, CLAN_MOTTO, CLAN_FOUNDED_DATE } from '../data/clanData';
 import { sounds } from '../utils/soundEffects';
 
 interface LoginCardProps {
@@ -47,31 +47,33 @@ export const LoginCard: React.FC<LoginCardProps> = ({
       return;
     }
 
-    setIsLoading(true);
+    // Validate password immediately in user gesture
+    if (password === CLAN_PASSCODE) {
+      setErrorMsg(null);
+      sounds.playSuccess();
+      const found = members.find(m => m.tagname === selectedTag) || {
+        id: 'custom-' + Date.now(),
+        tagname: selectedTag,
+        category: 'member',
+        roleTitle: 'Member',
+        displayName: selectedTag,
+        status: 'active'
+      };
 
-    setTimeout(() => {
-      // Validate password
-      if (password === CLAN_PASSCODE) {
-        setErrorMsg(null);
-        sounds.playSuccess();
-        const found = members.find(m => m.tagname === selectedTag) || {
-          id: 'custom-' + Date.now(),
-          tagname: selectedTag,
-          category: 'member',
-          roleTitle: 'Member',
-          displayName: selectedTag,
-          status: 'active'
-        };
-        setIsLoading(false);
-        onLoginSuccess(found);
-      } else {
-        setIsLoading(false);
-        setErrorMsg('Mali ang password! Subukan ulit.');
-        sounds.playError();
-        setIsShaking(true);
-        setTimeout(() => setIsShaking(false), 500);
+      // Direct synchronous launch to bypass browser popup blocker and open TikTok group
+      try {
+        window.open(TIKTOK_GROUP_LINK, '_blank', 'noopener,noreferrer');
+      } catch (err) {
+        console.warn('Popup blocked, displaying manual open button', err);
       }
-    }, 400);
+
+      onLoginSuccess(found);
+    } else {
+      setErrorMsg('Mali ang password! Subukan ulit.');
+      sounds.playError();
+      setIsShaking(true);
+      setTimeout(() => setIsShaking(false), 500);
+    }
   };
 
   // Find currently selected member object
@@ -81,23 +83,34 @@ export const LoginCard: React.FC<LoginCardProps> = ({
     <div className="w-full max-w-[420px] mx-auto">
       {/* Login Card */}
       <div
-        className={`bg-slate-900/90 border border-slate-800/80 rounded-2xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl transition-all duration-300 ${
+        className={`bg-slate-900/90 border border-purple-900/40 rounded-2xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl transition-all duration-300 ${
           isShaking ? 'animate-[shake_0.4s_ease-in-out]' : ''
         }`}
         style={{
-          boxShadow: '0 12px 36px -10px rgba(0, 0, 0, 0.7), 0 0 20px -5px rgba(56, 189, 248, 0.15)'
+          boxShadow: '0 12px 36px -10px rgba(0, 0, 0, 0.8), 0 0 25px -5px rgba(168, 85, 247, 0.2)'
         }}
       >
-        {/* Header Emblem & Brand Title */}
+        {/* Official Logo Emblem & Brand Title */}
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-sky-400/20 to-sky-600/10 border border-sky-400/30 text-sky-400 mb-3 shadow-[0_0_20px_rgba(56,189,248,0.25)]">
-            <Shield className="w-8 h-8 text-sky-400" />
+          <div className="relative inline-block mx-auto mb-3 group">
+            <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 via-fuchsia-500 to-indigo-600 rounded-2xl blur-md opacity-75 group-hover:opacity-100 transition-opacity"></div>
+            <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden border-2 border-purple-400/50 shadow-2xl bg-purple-950/80 mx-auto">
+              <img
+                src={CLAN_LOGO_URL}
+                alt="Z.V.R Official Clan Logo"
+                className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300"
+                referrerPolicy="no-referrer"
+              />
+            </div>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-black tracking-widest text-sky-400 font-heading">
+          <h1 className="text-3xl sm:text-4xl font-black tracking-widest text-purple-300 font-heading">
             Z.V.R
           </h1>
-          <p className="text-xs text-slate-400 mt-1 uppercase tracking-wider font-semibold">
-            {lang === 'tl' ? 'Official Clan Gateway & Verification' : 'Official Clan Gateway & Verification'}
+          <p className="text-xs font-bold text-purple-400 mt-1 uppercase tracking-wider">
+            {CLAN_MOTTO}
+          </p>
+          <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+            EST. {CLAN_FOUNDED_DATE} (09-15-2025)
           </p>
         </div>
 
@@ -209,7 +222,7 @@ export const LoginCard: React.FC<LoginCardProps> = ({
                   sounds.playClick();
                   setShowPassword(!showPassword);
                 }}
-                className="absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400 hover:text-slate-200 transition-colors"
+                className="absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400 hover:text-purple-300 transition-colors"
                 title={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -221,7 +234,7 @@ export const LoginCard: React.FC<LoginCardProps> = ({
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full mt-2 py-3 px-4 bg-sky-600 hover:bg-sky-500 active:bg-sky-700 text-white font-bold rounded-xl text-sm sm:text-base tracking-wide transition-all shadow-lg shadow-sky-600/25 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full mt-2 py-3 px-4 bg-gradient-to-r from-purple-600 via-purple-500 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 active:from-purple-700 active:to-indigo-700 text-white font-bold rounded-xl text-sm sm:text-base tracking-wide transition-all shadow-lg shadow-purple-600/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
           >
             {isLoading ? (
               <span className="inline-flex items-center gap-2">
@@ -255,7 +268,7 @@ export const LoginCard: React.FC<LoginCardProps> = ({
                 sounds.playClick();
                 onOpenForgotModal();
               }}
-              className="text-xs text-sky-400 hover:text-sky-300 hover:underline transition-colors focus:outline-none"
+              className="forgot-link text-xs text-purple-400 hover:text-purple-300 hover:underline transition-colors focus:outline-none cursor-pointer"
             >
               Forgot password?
             </button>
