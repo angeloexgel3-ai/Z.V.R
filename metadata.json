@@ -1,0 +1,6 @@
+{
+  "name": "Z.V.R Clan Portal & Verification",
+  "description": "Official portal, member roster verification, tagname generator, and Messenger GC gateway for Z.V.R clan.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
