@@ -1,0 +1,190 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidDateKey(dateKey) {
+      return dateKey is string && dateKey.size() == 10 && dateKey.matches('^\\d{4}-\\d{2}-\\d{2}$');
+    }
+
+    function isAdmin() {
+      return request.auth != null &&
+        request.auth.token.email == 'exgel85@gmail.com' &&
+        request.auth.token.email_verified == true;
+    }
+
+    function isValidAccount(data) {
+      return data.keys().hasAll(['id', 'name', 'tagname', 'roleTitle', 'category', 'registeredAt']) &&
+        data.keys().hasOnly(['id', 'name', 'tagname', 'password', 'roleTitle', 'category', 'registeredAt']) &&
+        data.id is string && data.id.size() >= 1 && data.id.size() <= 128 &&
+        data.name is string && data.name.size() >= 1 && data.name.size() <= 120 &&
+        data.tagname is string && data.tagname.size() >= 1 && data.tagname.size() <= 200 &&
+        (!('password' in data) || (data.password is string && data.password.size() <= 128)) &&
+        data.roleTitle is string && data.roleTitle.size() >= 1 && data.roleTitle.size() <= 64 &&
+        data.category in ['leadership', 'member'] &&
+        data.registeredAt is string && data.registeredAt.size() <= 64;
+    }
+
+    function isValidRemovedTagname(data) {
+      return data.keys().hasAll(['tagnameLower', 'removedAt']) &&
+        data.keys().hasOnly(['tagnameLower', 'removedAt']) &&
+        data.tagnameLower is string && data.tagnameLower.size() >= 1 && data.tagnameLower.size() <= 200 &&
+        data.removedAt is number && data.removedAt >= 0;
+    }
+
+    function isValidPendingRegistration(data) {
+      return data.keys().hasAll(['id', 'name', 'tagname', 'roleTitle', 'requestedAt']) &&
+        data.keys().hasOnly(['id', 'name', 'tagname', 'roleTitle', 'reason', 'requestedAt']) &&
+        data.id is string && data.id.size() >= 1 && data.id.size() <= 128 &&
+        data.name is string && data.name.size() >= 1 && data.name.size() <= 120 &&
+        data.tagname is string && data.tagname.size() >= 1 && data.tagname.size() <= 200 &&
+        data.roleTitle is string && data.roleTitle.size() >= 1 && data.roleTitle.size() <= 64 &&
+        (!('reason' in data) || (data.reason is string && data.reason.size() <= 500)) &&
+        data.requestedAt is string && data.requestedAt.size() <= 64;
+    }
+
+    function isValidSuspension(data) {
+      return data.keys().hasAll(['id', 'tagname', 'reason', 'date']) &&
+        data.keys().hasOnly(['id', 'tagname', 'targetTagname', 'name', 'reason', 'date', 'action']) &&
+        data.id is string && data.id.size() >= 1 && data.id.size() <= 128 &&
+        data.tagname is string && data.tagname.size() >= 1 && data.tagname.size() <= 200 &&
+        (!('targetTagname' in data) || (data.targetTagname is string && data.targetTagname.size() <= 200)) &&
+        (!('name' in data) || (data.name is string && data.name.size() <= 120)) &&
+        data.reason is string && data.reason.size() <= 500 &&
+        data.date is string && data.date.size() <= 64 &&
+        (!('action' in data) || (data.action is string && data.action.size() <= 64));
+    }
+
+    function isValidAttendanceDay(data) {
+      return data.keys().hasAll(['dateKey', 'updatedAt']) &&
+        data.keys().hasOnly(['dateKey', 'updatedAt']) &&
+        isValidDateKey(data.dateKey) &&
+        data.updatedAt is number && data.updatedAt >= 0;
+    }
+
+    function isValidAttendanceEntry(data) {
+      return data.keys().hasAll(['entryKey', 'isPresent']) &&
+        data.keys().hasOnly(['entryKey', 'isPresent', 'timeCheckedIn']) &&
+        data.entryKey is string && data.entryKey.size() >= 1 && data.entryKey.size() <= 200 &&
+        data.isPresent is bool &&
+        (!('timeCheckedIn' in data) || (data.timeCheckedIn is string && data.timeCheckedIn.size() <= 32));
+    }
+
+    function isValidReplyTo(reply) {
+      return reply is map &&
+        reply.keys().hasAll(['messageId', 'senderName', 'senderTagname']) &&
+        reply.keys().hasOnly(['messageId', 'senderName', 'senderTagname', 'text', 'mediaType']) &&
+        reply.messageId is string && reply.messageId.size() >= 1 && reply.messageId.size() <= 128 &&
+        reply.senderName is string && reply.senderName.size() <= 120 &&
+        reply.senderTagname is string && reply.senderTagname.size() <= 200 &&
+        (!('text' in reply) || (reply.text is string && reply.text.size() <= 4000)) &&
+        (!('mediaType' in reply) || reply.mediaType in ['image', 'video', 'audio', 'tiktok_live']);
+    }
+
+    function isValidChatMessage(data) {
+      return data.keys().hasAll(['id', 'senderTagname', 'senderName', 'senderRole', 'senderCategory', 'timestamp', 'createdTimestamp']) &&
+        data.keys().hasOnly([
+          'id', 'senderTagname', 'senderName', 'senderRole', 'senderCategory',
+          'timestamp', 'createdTimestamp', 'text', 'mediaType', 'mediaUrl',
+          'mediaDuration', 'liveTitle', 'liveUrl', 'reactions', 'isUnsent',
+          'unsentBy', 'replyTo'
+        ]) &&
+        data.id is string && data.id.size() >= 1 && data.id.size() <= 128 &&
+        data.senderTagname is string && data.senderTagname.size() >= 1 && data.senderTagname.size() <= 200 &&
+        data.senderName is string && data.senderName.size() >= 1 && data.senderName.size() <= 120 &&
+        data.senderRole is string && data.senderRole.size() >= 1 && data.senderRole.size() <= 64 &&
+        data.senderCategory in ['leadership', 'member'] &&
+        data.timestamp is string && data.timestamp.size() >= 1 && data.timestamp.size() <= 64 &&
+        data.createdTimestamp is number && data.createdTimestamp >= 0 &&
+        (!('text' in data) || (data.text is string && data.text.size() <= 4000)) &&
+        (!('mediaType' in data) || data.mediaType in ['image', 'video', 'audio', 'tiktok_live']) &&
+        (!('mediaUrl' in data) || (data.mediaUrl is string && data.mediaUrl.size() <= 900000)) &&
+        (!('mediaDuration' in data) || (data.mediaDuration is number && data.mediaDuration >= 0)) &&
+        (!('liveTitle' in data) || (data.liveTitle is string && data.liveTitle.size() <= 300)) &&
+        (!('liveUrl' in data) || (data.liveUrl is string && data.liveUrl.size() <= 1000)) &&
+        (!('reactions' in data) || (data.reactions is map && data.reactions.size() <= 20)) &&
+        (!('isUnsent' in data) || data.isUnsent is bool) &&
+        (!('unsentBy' in data) || (data.unsentBy is string && data.unsentBy.size() <= 120)) &&
+        (!('replyTo' in data) || isValidReplyTo(data.replyTo));
+    }
+
+    function isValidLivePin(data) {
+      return data.keys().hasAll(['id', 'active']) &&
+        data.keys().hasOnly(['id', 'streamerName', 'streamerTagname', 'title', 'liveUrl', 'startedAt', 'active']) &&
+        data.id is string && data.id.size() >= 1 && data.id.size() <= 128 &&
+        (!('streamerName' in data) || (data.streamerName is string && data.streamerName.size() <= 120)) &&
+        (!('streamerTagname' in data) || (data.streamerTagname is string && data.streamerTagname.size() <= 200)) &&
+        (!('title' in data) || (data.title is string && data.title.size() <= 300)) &&
+        (!('liveUrl' in data) || (data.liveUrl is string && data.liveUrl.size() <= 1000)) &&
+        (!('startedAt' in data) || (data.startedAt is string && data.startedAt.size() <= 64)) &&
+        data.active is bool;
+    }
+
+    // Connection test document check required on boot
+    match /test/connection {
+      allow get: if true;
+    }
+
+    // Z.V.R Registered Accounts
+    match /zvr_accounts/{accountId} {
+      allow list: if true;
+      allow get, delete: if isValidId(accountId) || isAdmin();
+      allow create, update: if isValidId(accountId) && isValidAccount(request.resource.data);
+    }
+
+    // Z.V.R Removed Tagnames
+    match /zvr_removed_tagnames/{tagDocId} {
+      allow list: if true;
+      allow get, delete: if isValidId(tagDocId) || isAdmin();
+      allow create, update: if isValidId(tagDocId) && isValidRemovedTagname(request.resource.data);
+    }
+
+    // Z.V.R Pending Registrations
+    match /zvr_pending_registrations/{regId} {
+      allow list: if true;
+      allow get, delete: if isValidId(regId) || isAdmin();
+      allow create, update: if isValidId(regId) && isValidPendingRegistration(request.resource.data);
+    }
+
+    // Z.V.R Suspensions
+    match /zvr_suspensions/{suspId} {
+      allow list: if true;
+      allow get, delete: if isValidId(suspId) || isAdmin();
+      allow create, update: if isValidId(suspId) && isValidSuspension(request.resource.data);
+    }
+
+    // Z.V.R Daily Attendance Cycles + Entries Subcollection
+    match /zvr_attendance/{dateKey} {
+      allow list: if true;
+      allow get, delete: if isValidDateKey(dateKey) || isAdmin();
+      allow create, update: if isValidDateKey(dateKey) && isValidAttendanceDay(request.resource.data);
+
+      match /entries/{entryDocId} {
+        allow list: if isValidDateKey(dateKey);
+        allow get, delete: if (isValidDateKey(dateKey) && isValidId(entryDocId)) || isAdmin();
+        allow create, update: if isValidDateKey(dateKey) && isValidId(entryDocId) && isValidAttendanceEntry(request.resource.data);
+      }
+    }
+
+    // Z.V.R Room GC Chat Messages
+    match /zvr_chat_messages/{messageId} {
+      allow list: if true;
+      allow get, delete: if isValidId(messageId) || isAdmin();
+      allow create, update: if isValidId(messageId) && isValidChatMessage(request.resource.data);
+    }
+
+    // Z.V.R Portal Metadata (Pinned TikTok Live)
+    match /zvr_portal_meta/{metaId} {
+      allow list: if true;
+      allow get, delete: if isValidId(metaId) || isAdmin();
+      allow create, update: if isValidId(metaId) && isValidLivePin(request.resource.data);
+    }
+  }
+}

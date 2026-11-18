@@ -35,23 +35,23 @@ export const TagGenerator: React.FC<TagGeneratorProps> = ({ lang }) => {
     <div className="w-full max-w-3xl mx-auto space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-2xl sm:text-3xl font-black text-white font-heading flex items-center gap-2">
-          <Wand2 className="w-6 h-6 text-sky-400" />
+        <h2 className="text-2xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-200 via-pink-200 to-indigo-200 font-heading flex items-center gap-2">
+          <Wand2 className="w-6 h-6 text-purple-300" />
           <span>{lang === 'tl' ? 'Z.V.R Tagname Generator' : 'Z.V.R Tagname Generator'}</span>
         </h2>
-        <p className="text-xs text-slate-400 mt-0.5">
+        <p className="text-xs text-purple-200/60 mt-0.5">
           {lang === 'tl'
-            ? 'Gumawa ng opisyal na clan tag para sa MLBB, CODM, Facebook, o Discord.'
-            : 'Generate your official clan tag for MLBB, CODM, Facebook, or Discord.'}
+            ? 'Gumawa ng opisyal na Z.V.R tag para sa TikTok, Facebook, Messenger, o social media profile.'
+            : 'Generate your official Z.V.R tag for TikTok, Facebook, Messenger, or social media profile.'}
         </p>
       </div>
 
       {/* Generator Tool Box */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl space-y-5">
+      <div className="liquid-glass-panel rounded-3xl p-5 sm:p-6 shadow-xl space-y-5 relative overflow-hidden">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Input Nickname */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wide mb-1.5">
+            <label className="block text-xs font-semibold text-purple-200/90 uppercase tracking-wide mb-1.5">
               {lang === 'tl' ? 'Iyong Nickname / IGN' : 'Your Nickname / IGN'}
             </label>
             <input
@@ -60,14 +60,14 @@ export const TagGenerator: React.FC<TagGeneratorProps> = ({ lang }) => {
               onChange={(e) => setNickname(e.target.value)}
               placeholder="e.g. ANGEL, VALKYRIE, SHADOW"
               maxLength={18}
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-medium text-sm focus:border-sky-400 outline-none transition-colors"
+              className="liquid-glass-input w-full rounded-xl px-3.5 py-2.5 text-white font-medium text-sm outline-none transition-colors"
             />
           </div>
 
           {/* Role selector */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wide mb-1.5">
-              {lang === 'tl' ? 'Pumili ng Tungkulin / Role' : 'Clan Rank / Role'}
+            <label className="block text-xs font-semibold text-purple-200/90 uppercase tracking-wide mb-1.5">
+              {lang === 'tl' ? 'Pumili ng Tungkulin / Role' : 'Z.V.R Rank / Role'}
             </label>
             <select
               value={role}
@@ -75,7 +75,7 @@ export const TagGenerator: React.FC<TagGeneratorProps> = ({ lang }) => {
                 sounds.playClick();
                 setRole(e.target.value);
               }}
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-medium text-sm focus:border-sky-400 outline-none transition-colors"
+              className="liquid-glass-input w-full rounded-xl px-3.5 py-2.5 text-white font-medium text-sm outline-none transition-colors bg-slate-950"
             >
               {roleOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -87,11 +87,11 @@ export const TagGenerator: React.FC<TagGeneratorProps> = ({ lang }) => {
         </div>
 
         {/* Real-time Small Caps Preview */}
-        <div className="bg-slate-950/70 border border-slate-800 rounded-xl p-3.5 flex items-center justify-between text-xs">
-          <span className="text-slate-400">
+        <div className="liquid-glass-card-subtle rounded-xl p-3.5 flex items-center justify-between text-xs">
+          <span className="text-purple-200/70">
             {lang === 'tl' ? 'Small Caps Conversion:' : 'Small Caps Conversion:'}
           </span>
-          <span className="font-mono text-sky-300 font-bold tracking-wider">
+          <span className="font-mono text-purple-200 font-bold tracking-wider">
             {toSmallCaps(nickname || 'name')}
           </span>
         </div>
@@ -99,8 +99,8 @@ export const TagGenerator: React.FC<TagGeneratorProps> = ({ lang }) => {
 
       {/* Generated Formats */}
       <div className="space-y-3">
-        <h3 className="text-sm font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-sky-400" />
+        <h3 className="text-sm font-bold text-purple-300 uppercase tracking-wider flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-purple-400" />
           <span>{lang === 'tl' ? 'Mga Pagpipiliang Estilo' : 'Generated Tag Styles'}</span>
         </h3>
 
@@ -112,10 +112,10 @@ export const TagGenerator: React.FC<TagGeneratorProps> = ({ lang }) => {
             return (
               <div
                 key={style.id}
-                className="bg-slate-900/80 border border-slate-800 hover:border-sky-500/40 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition-all"
+                className="liquid-glass-card-subtle hover:border-white/30 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition-all"
               >
                 <div>
-                  <span className="text-[11px] font-semibold text-slate-400 block mb-1">
+                  <span className="text-[11px] font-semibold text-purple-300/70 block mb-1">
                     {style.label}
                   </span>
                   <div className="font-mono text-sm sm:text-base text-white select-all">
@@ -128,7 +128,7 @@ export const TagGenerator: React.FC<TagGeneratorProps> = ({ lang }) => {
                   className={`w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                     isCopied
                       ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                      : 'bg-sky-600 hover:bg-sky-500 text-white shadow-md shadow-sky-600/20'
+                      : 'liquid-glass-btn-primary text-white shadow-md'
                   }`}
                 >
                   {isCopied ? (

@@ -1,0 +1,153 @@
+{
+  "entities": {
+    "ZvrAccount": {
+      "title": "Z.V.R Registered Account",
+      "description": "A registered member or leadership account with Tagname, role, and login password.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "name": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "tagname": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "password": { "type": "string", "maxLength": 128 },
+        "roleTitle": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "category": { "type": "string", "enum": ["leadership", "member"] },
+        "registeredAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "name", "tagname", "roleTitle", "category", "registeredAt"]
+    },
+    "ZvrRemovedTagname": {
+      "title": "Z.V.R Removed Tagname",
+      "description": "Tracks removed tagnames so old client caches do not re-sync deleted accounts.",
+      "type": "object",
+      "properties": {
+        "tagnameLower": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "removedAt": { "type": "number" }
+      },
+      "required": ["tagnameLower", "removedAt"]
+    },
+    "ZvrPendingRegistration": {
+      "title": "Z.V.R Pending Registration",
+      "description": "Pending member registration request awaiting review.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "name": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "tagname": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "roleTitle": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "reason": { "type": "string", "maxLength": 500 },
+        "requestedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "name", "tagname", "roleTitle", "requestedAt"]
+    },
+    "ZvrSuspension": {
+      "title": "Z.V.R Suspension Record",
+      "description": "Suspended or evicted member record.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "tagname": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "targetTagname": { "type": "string", "maxLength": 200 },
+        "name": { "type": "string", "maxLength": 120 },
+        "reason": { "type": "string", "maxLength": 500 },
+        "date": { "type": "string", "maxLength": 64 },
+        "action": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "tagname", "reason", "date"]
+    },
+    "ZvrAttendanceDay": {
+      "title": "Z.V.R Attendance Day",
+      "description": "Daily attendance cycle document keyed by YYYY-MM-DD (3:00 AM PH reset).",
+      "type": "object",
+      "properties": {
+        "dateKey": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "updatedAt": { "type": "number" }
+      },
+      "required": ["dateKey", "updatedAt"]
+    },
+    "ZvrAttendanceEntry": {
+      "title": "Z.V.R Attendance Entry",
+      "description": "Individual member Present/Absent entry within an attendance cycle day.",
+      "type": "object",
+      "properties": {
+        "entryKey": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "isPresent": { "type": "boolean" },
+        "timeCheckedIn": { "type": "string", "maxLength": 32 }
+      },
+      "required": ["entryKey", "isPresent"]
+    },
+    "ZvrChatMessage": {
+      "title": "Z.V.R Room GC Message",
+      "description": "Persistent chat message in the Z.V.R Room GC including replies, reactions, and unsend state.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "senderTagname": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "senderName": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "senderRole": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "senderCategory": { "type": "string", "enum": ["leadership", "member"] },
+        "timestamp": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "createdTimestamp": { "type": "number" },
+        "text": { "type": "string", "maxLength": 4000 },
+        "mediaType": { "type": "string", "enum": ["image", "video", "audio", "tiktok_live"] },
+        "mediaUrl": { "type": "string", "maxLength": 900000 },
+        "mediaDuration": { "type": "number" },
+        "liveTitle": { "type": "string", "maxLength": 300 },
+        "liveUrl": { "type": "string", "maxLength": 1000 },
+        "reactions": { "type": "object" },
+        "isUnsent": { "type": "boolean" },
+        "unsentBy": { "type": "string", "maxLength": 120 },
+        "replyTo": { "type": "object" }
+      },
+      "required": ["id", "senderTagname", "senderName", "senderRole", "senderCategory", "timestamp", "createdTimestamp"]
+    },
+    "ZvrLivePin": {
+      "title": "Z.V.R Pinned TikTok Live",
+      "description": "Pinned live stream announcement in Room GC.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "streamerName": { "type": "string", "maxLength": 120 },
+        "streamerTagname": { "type": "string", "maxLength": 200 },
+        "title": { "type": "string", "maxLength": 300 },
+        "liveUrl": { "type": "string", "maxLength": 1000 },
+        "startedAt": { "type": "string", "maxLength": 64 },
+        "active": { "type": "boolean" }
+      },
+      "required": ["id", "active"]
+    }
+  },
+  "firestore": {
+    "/zvr_accounts/{accountId}": {
+      "schema": { "$ref": "#/entities/ZvrAccount" },
+      "description": "Registered Z.V.R member and leadership Tagname accounts."
+    },
+    "/zvr_removed_tagnames/{tagDocId}": {
+      "schema": { "$ref": "#/entities/ZvrRemovedTagname" },
+      "description": "Registry of removed tagnames to prevent stale resync."
+    },
+    "/zvr_pending_registrations/{regId}": {
+      "schema": { "$ref": "#/entities/ZvrPendingRegistration" },
+      "description": "Pending registration requests."
+    },
+    "/zvr_suspensions/{suspId}": {
+      "schema": { "$ref": "#/entities/ZvrSuspension" },
+      "description": "Suspended member records."
+    },
+    "/zvr_attendance/{dateKey}": {
+      "schema": { "$ref": "#/entities/ZvrAttendanceDay" },
+      "description": "Daily attendance cycle metadata keyed by YYYY-MM-DD."
+    },
+    "/zvr_attendance/{dateKey}/entries/{entryDocId}": {
+      "schema": { "$ref": "#/entities/ZvrAttendanceEntry" },
+      "description": "Individual member check-in records for a given attendance day."
+    },
+    "/zvr_chat_messages/{messageId}": {
+      "schema": { "$ref": "#/entities/ZvrChatMessage" },
+      "description": "Room GC chat messages, reactions, replies, and unsend placeholders."
+    },
+    "/zvr_portal_meta/{metaId}": {
+      "schema": { "$ref": "#/entities/ZvrLivePin" },
+      "description": "Portal metadata documents such as the pinned TikTok Live banner."
+    }
+  }
+}
