@@ -87,6 +87,29 @@ function getAttendanceDateKey(now: Date = new Date()): string {
   return `${year}-${month}-${day}`;
 }
 
+function getWorkweekAttendanceMap(now: Date = new Date()): Record<string, Record<string, { isPresent: boolean; timeCheckedIn?: string }>> {
+  const shiftedMs = now.getTime() + (8 - 3) * 60 * 60 * 1000;
+  const shifted = new Date(shiftedMs);
+  const utcDay = shifted.getUTCDay();
+  const mondayOffset = utcDay === 0 ? -6 : 1 - utcDay;
+  const mondayMs = Date.UTC(
+    shifted.getUTCFullYear(),
+    shifted.getUTCMonth(),
+    shifted.getUTCDate() + mondayOffset
+  );
+  const dayMs = 24 * 60 * 60 * 1000;
+  const result: Record<string, Record<string, { isPresent: boolean; timeCheckedIn?: string }>> = {};
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(mondayMs + i * dayMs);
+    const year = d.getUTCFullYear();
+    const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(d.getUTCDate()).padStart(2, '0');
+    const key = `${year}-${month}-${day}`;
+    result[key] = attendanceStore[key] || {};
+  }
+  return result;
+}
+
 function pruneOldMessages(msgs: ServerChatMessage[]): ServerChatMessage[] {
   const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
   return msgs.filter((m) => (m.createdTimestamp || Date.now()) > sevenDaysAgo).slice(-150);
@@ -229,6 +252,7 @@ wss.on('connection', (ws) => {
       onlineUsers: getUniqueOnlineUsers(),
       messages: chatMessages,
       attendanceMap: attendanceStore[initialDateKey] || {},
+      weeklyAttendanceMap: getWorkweekAttendanceMap(),
       todayDateKey: initialDateKey,
       currentLivePin,
       pendingRegistrations,
@@ -283,6 +307,7 @@ wss.on('connection', (ws) => {
               onlineUsers: onlineList,
               messages: chatMessages,
               attendanceMap: attendanceStore[todayKey] || {},
+              weeklyAttendanceMap: getWorkweekAttendanceMap(),
               todayDateKey: todayKey,
               currentLivePin,
               pendingRegistrations,
@@ -800,6 +825,7 @@ app.get('/api/state', (req, res) => {
     onlineUsers: getUniqueOnlineUsers(),
     messages: chatMessages,
     attendanceMap: attendanceStore[todayKey] || {},
+    weeklyAttendanceMap: getWorkweekAttendanceMap(),
     todayDateKey: todayKey,
     currentLivePin,
     pendingRegistrations,
@@ -807,6 +833,14 @@ app.get('/api/state', (req, res) => {
     registeredAccounts,
     removedTagnames,
     voiceParticipants: getVoiceParticipants(),
+  });
+});
+
+app.get('/api/attendance/weekly-total', (req, res) => {
+  const todayKey = getAttendanceDateKey();
+  res.json({
+    todayDateKey: todayKey,
+    weeklyAttendanceMap: getWorkweekAttendanceMap(),
   });
 });
 

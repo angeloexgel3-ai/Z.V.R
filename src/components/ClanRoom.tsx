@@ -38,9 +38,10 @@ import {
   Copy,
   Check,
   RotateCcw,
-  CornerUpLeft
+  CornerUpLeft,
+  Flag
 } from 'lucide-react';
-import { ClanMember, CLAN_LOGO_URL, CLAN_MOTTO, getAttendanceDateKey, formatTagnameUppercase } from '../data/clanData';
+import { ClanMember, CLAN_LOGO_URL, CLAN_MOTTO, getAttendanceDateKey, formatTagnameUppercase, isOfficialMember } from '../data/clanData';
 import { sounds } from '../utils/soundEffects';
 import { ClanVideoCallModal } from './ClanVideoCallModal';
 import { realtimeClient, OnlineMemberRecord } from '../utils/realtimeClient';
@@ -102,6 +103,7 @@ interface ClanRoomProps {
   onIncomingMessage?: (notice: IncomingMessageNotice) => void;
   scrollToLatestSignal?: number;
   openCallSignal?: number;
+  onOpenReport?: () => void;
 }
 
 export const ClanRoom: React.FC<ClanRoomProps> = ({
@@ -112,7 +114,8 @@ export const ClanRoom: React.FC<ClanRoomProps> = ({
   onlineUsers = [],
   onIncomingMessage,
   scrollToLatestSignal = 0,
-  openCallSignal = 0
+  openCallSignal = 0,
+  onOpenReport
 }) => {
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     try {
@@ -2564,6 +2567,22 @@ export const ClanRoom: React.FC<ClanRoomProps> = ({
                 <span>{lang === 'tl' ? 'Linisin ang Cache' : 'Clear Cache'}</span>
               </button>
             </div>
+
+            {/* Officials-Only Report Room Button */}
+            {isOfficialMember(loggedInMember) && onOpenReport && (
+              <button
+                type="button"
+                onClick={() => {
+                  sounds.playClick();
+                  setIsInfoModalOpen(false);
+                  onOpenReport();
+                }}
+                className="w-full mb-2 p-2.5 rounded-xl bg-pink-600/20 border border-pink-500/40 text-pink-200 text-xs font-bold flex items-center justify-center gap-2 cursor-pointer hover:bg-pink-600/30 transition-all"
+              >
+                <Flag className="w-4 h-4 text-pink-400" />
+                <span>Report Room (Officials Only)</span>
+              </button>
+            )}
 
             {/* Clear All Messages in Room Button */}
             <button

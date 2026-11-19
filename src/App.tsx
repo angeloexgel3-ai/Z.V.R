@@ -16,12 +16,25 @@ import { ClanRoom, IncomingMessageNotice } from './components/ClanRoom';
 import { RemoveTagname } from './components/RemoveTagname';
 import { IntroSplash } from './components/IntroSplash';
 import { SettingsModal } from './components/SettingsModal';
+import { ReportMemberModal } from './components/ReportMemberModal';
+import { TabSkeletonScreen, SkeletonTabType } from './components/TabSkeletonScreen';
+import { WeeklyAttendanceTotal } from './components/WeeklyAttendanceTotal';
 import { INITIAL_MEMBERS, ClanMember, CLAN_FB_PROFILE_LINK, RegisteredAccount, accountToClanMember, formatTagnameUppercase, CLAN_LOGO_URL } from './data/clanData';
 import { Shield, Sparkles, MessageCircle, Heart, UserCheck, Bell, X, PhoneCall, PhoneOff, Video } from 'lucide-react';
 import { sounds } from './utils/soundEffects';
 import { runDailyAutoCleanup } from './utils/cacheManager';
 import { realtimeClient, OnlineMemberRecord, IncomingCallEvent } from './utils/realtimeClient';
 import { loadPortalSettings, savePortalSettings, PortalSettings } from './utils/portalSettings';
+
+const SKELETON_TABS = new Set<SkeletonTabType>([
+  'login',
+  'room',
+  'generator',
+  'roster',
+  'rules',
+  'remove_tagname',
+  'weekly_attendance',
+]);
 
 export default function App() {
   const [loggedInMember, setLoggedInMember] = useState<ClanMember | null>(() => {
@@ -37,7 +50,9 @@ export default function App() {
     return null;
   });
 
-  const [currentTab, setCurrentTab] = useState<'login' | 'room' | 'roster' | 'generator' | 'rules' | 'card' | 'remove_tagname'>(() => {
+  const [currentTab, setCurrentTab] = useState<
+    'login' | 'room' | 'roster' | 'generator' | 'rules' | 'card' | 'remove_tagname' | 'weekly_attendance'
+  >(() => {
     try {
       const savedLogin = localStorage.getItem('zvr_active_login');
       if (savedLogin) {
@@ -57,6 +72,10 @@ export default function App() {
   const [incomingCallAlert, setIncomingCallAlert] = useState<IncomingCallEvent | null>(null);
   const incomingCallTimerRef = useRef<any>(null);
   const roomToastTimerRef = useRef<any>(null);
+  const tabSkeletonTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isTabSkeletonVisible, setIsTabSkeletonVisible] = useState<boolean>(() =>
+    currentTab === 'room'
+  );
   const currentTabRef = useRef(currentTab);
   useEffect(() => {
     currentTabRef.current = currentTab;
@@ -65,6 +84,37 @@ export default function App() {
       setRoomNotificationToast(null);
     }
   }, [currentTab]);
+
+  const startTabSkeleton = useCallback((tab: typeof currentTab) => {
+    if (tabSkeletonTimerRef.current) {
+      clearTimeout(tabSkeletonTimerRef.current);
+      tabSkeletonTimerRef.current = null;
+    }
+    if (SKELETON_TABS.has(tab as SkeletonTabType)) {
+      setIsTabSkeletonVisible(true);
+      tabSkeletonTimerRef.current = setTimeout(() => {
+        setIsTabSkeletonVisible(false);
+        tabSkeletonTimerRef.current = null;
+        if (tab === 'room') {
+          setScrollToRoomLatestTick((t) => t + 1);
+        }
+      }, 1000);
+    } else {
+      setIsTabSkeletonVisible(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (currentTab === 'room') {
+      startTabSkeleton('room');
+    }
+    return () => {
+      if (tabSkeletonTimerRef.current) {
+        clearTimeout(tabSkeletonTimerRef.current);
+        tabSkeletonTimerRef.current = null;
+      }
+    };
+  }, []);
 
   const loggedInMemberRef = useRef<ClanMember | null>(loggedInMember);
   useEffect(() => {
@@ -207,6 +257,7 @@ export default function App() {
   const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
   const [isLoginSubModalOpen, setIsLoginSubModalOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [portalSettings, setPortalSettings] = useState<PortalSettings>(() => loadPortalSettings());
   const portalSettingsRef = useRef<PortalSettings>(portalSettings);
   useEffect(() => {
@@ -248,6 +299,7 @@ export default function App() {
             window.focus();
             sounds.stopCallRingtone();
             setIncomingCallAlert(null);
+            startTabSkeleton('room');
             setCurrentTab('room');
             setOpenCallSignal((s) => s + 1);
             notif.close();
@@ -332,31 +384,36 @@ export default function App() {
     } catch {}
     // Broadcast live presence to all other devices & enter shared room GC
     realtimeClient.login(member, 'room');
+    startTabSkeleton('room');
     setCurrentTab('room');
   };
 
   const handleRequireLogin = () => {
     setLoginNotice(
       lang === 'tl'
-        ? '⚠️ KAILANGAN MUNANG MAG-LOG IN SA PORTAL! Piliin ang iyong opisyal na Tagname at password upang makapasok sa Room GC at ma-unlock ang Attendance.'
-        : '⚠️ LOGIN REQUIRED! Please log in with your official Tagname and password first to enter Room GC and unlock Attendance.'
+        ? '⚠️ KAILANGAN MUNANG MAG-LOG IN SA PORTAL! Piliin ang iyong opisyal na Tagname at password upang ma-unlock ang Room GC, Attendance, Roster, Rules, Remove Tagname, at Weekly Attendance Total.'
+        : '⚠️ LOGIN REQUIRED! Please log in with your official Tagname and password first to unlock Room GC, Attendance, Roster, Rules, Remove Tagname, and Weekly Attendance Total.'
     );
   };
 
   const handleTabChange = (tab: typeof currentTab) => {
-    if (!loggedInMember && tab === 'room') {
+    if (!loggedInMember && tab !== 'login') {
       handleRequireLogin();
+      setIsTabSkeletonVisible(false);
       setCurrentTab('login');
+      window.scrollTo({ top: 0, behavior: 'auto' });
       return;
     }
+    startTabSkeleton(tab);
     setCurrentTab(tab);
+    window.scrollTo({ top: 0, behavior: 'auto' });
     if (loggedInMember) {
       realtimeClient.setTab(tab);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#05040a] text-slate-100 flex flex-col relative overflow-x-hidden selection:bg-purple-500 selection:text-white">
+    <div className="min-h-screen bg-[#05040a] text-slate-100 flex flex-col relative overflow-x-clip selection:bg-purple-500 selection:text-white">
       {/* Z.V.R Video Intro played before the Login screen */}
       {!loggedInMember && showIntro && (
         <IntroSplash lang={lang} onComplete={() => setShowIntro(false)} />
@@ -520,18 +577,19 @@ export default function App() {
       }`}>
         {/* Persistent Clan Room (Stays connected & active while exploring Portal, Roster, Rules, etc.) */}
         {loggedInMember && (
-          <div className={currentTab === 'room' ? 'w-full flex-1 flex flex-col justify-center items-center' : 'hidden'}>
+          <div className={currentTab === 'room' && !isTabSkeletonVisible ? 'w-full flex-1 flex flex-col justify-center items-center' : 'hidden'}>
             <ClanRoom
               loggedInMember={loggedInMember}
               onGoToLogin={() => {
                 handleRequireLogin();
-                setCurrentTab('login');
+                handleTabChange('login');
               }}
               onLogout={handleLogout}
               lang={lang}
               onlineUsers={onlineUsers}
               scrollToLatestSignal={scrollToRoomLatestTick}
               openCallSignal={openCallSignal}
+              onOpenReport={() => setIsReportModalOpen(true)}
               onIncomingMessage={(notice) => {
                 const activeSettings = portalSettingsRef.current;
 
@@ -580,14 +638,19 @@ export default function App() {
           </div>
         )}
 
-        {currentTab === 'login' && (
+        {isTabSkeletonVisible && SKELETON_TABS.has(currentTab as SkeletonTabType) && (
+          <TabSkeletonScreen tab={currentTab as SkeletonTabType} />
+        )}
+
+        {currentTab === 'login' && !isTabSkeletonVisible && (
           <div className="w-full flex justify-center items-center py-4">
             {loggedInMember ? (
               <VerifiedScreen
                 member={loggedInMember}
-                onExploreClan={() => setCurrentTab('roster')}
-                onEnterRoom={() => setCurrentTab('room')}
+                onExploreClan={() => handleTabChange('roster')}
+                onEnterRoom={() => handleTabChange('room')}
                 onOpenSettings={() => setIsSettingsOpen(true)}
+                onOpenReport={() => setIsReportModalOpen(true)}
                 lang={lang}
               />
             ) : (
@@ -599,14 +662,14 @@ export default function App() {
                 lang={lang}
                 notice={loginNotice}
                 onlineUsers={onlineUsers}
-                onGoToRemoveTagname={() => setCurrentTab('remove_tagname')}
+                onGoToRemoveTagname={() => handleTabChange('remove_tagname')}
                 onSubModalChange={setIsLoginSubModalOpen}
               />
             )}
           </div>
         )}
 
-        {currentTab === 'roster' && (
+        {currentTab === 'roster' && !isTabSkeletonVisible && loggedInMember && (
           <MemberRoster
             members={members}
             onAddMember={handleAddMember}
@@ -615,30 +678,39 @@ export default function App() {
           />
         )}
 
-        {currentTab === 'generator' && (
+        {currentTab === 'generator' && !isTabSkeletonVisible && loggedInMember && (
           <ClanAttendance
             members={members}
             loggedInMember={loggedInMember}
             onGoToLogin={() => {
               handleRequireLogin();
-              setCurrentTab('login');
+              handleTabChange('login');
             }}
             lang={lang}
             onlineUsers={onlineUsers}
           />
         )}
 
-        {currentTab === 'rules' && (
+        {currentTab === 'rules' && !isTabSkeletonVisible && loggedInMember && (
           <ClanRules lang={lang} />
         )}
 
-        {currentTab === 'remove_tagname' && (
+        {currentTab === 'remove_tagname' && !isTabSkeletonVisible && loggedInMember && (
           <RemoveTagname
             loggedInMember={loggedInMember}
             lang={lang}
-            onGoToLogin={() => setCurrentTab('login')}
-            onGoToCreateTagname={() => setCurrentTab('login')}
+            onGoToLogin={() => handleTabChange('login')}
+            onGoToCreateTagname={() => handleTabChange('login')}
+            onOpenReport={() => setIsReportModalOpen(true)}
             onlineUsers={onlineUsers}
+          />
+        )}
+
+        {currentTab === 'weekly_attendance' && !isTabSkeletonVisible && loggedInMember && (
+          <WeeklyAttendanceTotal
+            members={members}
+            loggedInMember={loggedInMember}
+            lang={lang}
           />
         )}
 
@@ -670,8 +742,16 @@ export default function App() {
         loggedInMember={loggedInMember}
       />
 
+      {/* Officials-Only Report Room Modal */}
+      <ReportMemberModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+        loggedInMember={loggedInMember}
+        lang={lang}
+      />
+
       {/* Footer - Only visible on main Login form (hidden in Create Tagname, Report, Room GC, etc.) */}
-      {currentTab === 'login' && !loggedInMember && !isLoginSubModalOpen && (
+      {currentTab === 'login' && !loggedInMember && !isLoginSubModalOpen && !isTabSkeletonVisible && (
         <footer className="relative z-10 border-t border-white/10 liquid-glass-card-subtle py-6 px-4">
           <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
             <div className="flex items-center gap-2">
@@ -706,9 +786,9 @@ export default function App() {
                   sounds.playClick();
                   if (!loggedInMember) {
                     handleRequireLogin();
-                    setCurrentTab('login');
+                    handleTabChange('login');
                   } else {
-                    setCurrentTab('room');
+                    handleTabChange('room');
                   }
                 }}
                 className="text-purple-300 hover:text-white transition-colors flex items-center gap-1 font-semibold cursor-pointer"

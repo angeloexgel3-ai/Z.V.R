@@ -398,3 +398,394 @@ export async function generateAttendancePicture(
 
   return { dataUrl, blob };
 }
+
+export type WeeklyDayState = 'present' | 'absent' | 'upcoming';
+
+export interface WeeklyAttendanceRowItem {
+  member: ClanMember;
+  days: Array<{
+    dayName: 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY' | 'SATURDAY' | 'SUNDAY';
+    shortName: 'MON' | 'TUE' | 'WED' | 'THU' | 'FRI' | 'SAT' | 'SUN';
+    dateKey: string;
+    state: WeeklyDayState;
+  }>;
+  presentTotal: number;
+  absentTotal: number;
+}
+
+export interface WeeklyAttendancePictureInput {
+  weekRangeLabel: string;
+  weekDays: Array<{
+    dayName: 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY' | 'SATURDAY' | 'SUNDAY';
+    shortName: 'MON' | 'TUE' | 'WED' | 'THU' | 'FRI' | 'SAT' | 'SUN';
+    dateKey: string;
+    formattedShort: string;
+  }>;
+  officials: WeeklyAttendanceRowItem[];
+  members: WeeklyAttendanceRowItem[];
+  lang: 'tl' | 'en';
+}
+
+export async function generateWeeklyAttendancePicture(
+  input: WeeklyAttendancePictureInput
+): Promise<{ dataUrl: string; blob: Blob }> {
+  const width = 1080;
+  const padX = 48;
+  const contentW = width - padX * 2;
+  const rowH = 92;
+  const rowGap = 12;
+
+  const officialsRows = Math.max(1, input.officials.length);
+  const membersRows = Math.max(1, input.members.length);
+
+  const headerHeight = 250;
+  const sectionHeaderH = 64;
+  const sectionGap = 36;
+  const footerH = 86;
+
+  const officialsBlockH = sectionHeaderH + officialsRows * (rowH + rowGap);
+  const membersBlockH = sectionHeaderH + membersRows * (rowH + rowGap);
+  const totalHeight = headerHeight + officialsBlockH + sectionGap + membersBlockH + footerH;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = totalHeight;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    throw new Error('Canvas 2D context unavailable');
+  }
+
+  // Background gradient
+  const bgGrad = ctx.createLinearGradient(0, 0, 0, totalHeight);
+  bgGrad.addColorStop(0, '#070412');
+  bgGrad.addColorStop(0.5, '#0d0720');
+  bgGrad.addColorStop(1, '#06030e');
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, width, totalHeight);
+
+  // Top neon accent line
+  const accentGrad = ctx.createLinearGradient(0, 0, width, 0);
+  accentGrad.addColorStop(0, '#a855f7');
+  accentGrad.addColorStop(0.5, '#ec4899');
+  accentGrad.addColorStop(1, '#06b6d4');
+  ctx.fillStyle = accentGrad;
+  ctx.fillRect(0, 0, width, 6);
+
+  // Header panel
+  drawRoundedRect(ctx, padX, 28, contentW, 194, 24);
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(168, 85, 247, 0.4)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Logo avatar
+  const logoImg = await loadLogoImage(CLAN_LOGO_URL);
+  const logoX = padX + 24;
+  const logoY = 50;
+  const logoSize = 78;
+  ctx.save();
+  drawRoundedRect(ctx, logoX, logoY, logoSize, logoSize, 18);
+  ctx.clip();
+  if (logoImg) {
+    ctx.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
+  } else {
+    ctx.fillStyle = '#4c1d95';
+    ctx.fillRect(logoX, logoY, logoSize, logoSize);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '900 22px Outfit, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Z.V.R', logoX + logoSize / 2, logoY + logoSize / 2);
+  }
+  ctx.restore();
+  drawRoundedRect(ctx, logoX, logoY, logoSize, logoSize, 18);
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Title & Week Range
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillStyle = '#f8fafc';
+  ctx.font = '900 28px Outfit, sans-serif';
+  ctx.fillText('Z.V.R WEEKLY ATTENDANCE TOTAL', logoX + logoSize + 20, 52);
+
+  ctx.fillStyle = '#d8b4fe';
+  ctx.font = '600 17px "Plus Jakarta Sans", sans-serif';
+  ctx.fillText(`MON – SUN  ·  ${input.weekRangeLabel}`, logoX + logoSize + 20, 92);
+
+  // SHOW FOR EVERYONE badge on header right
+  const statusText = 'SHOW FOR EVERYONE';
+  ctx.font = '800 13px "Plus Jakarta Sans", sans-serif';
+  const statusW = ctx.measureText(statusText).width + 30;
+  const statusX = padX + contentW - statusW - 24;
+  drawRoundedRect(ctx, statusX, 52, statusW, 34, 17);
+  ctx.fillStyle = 'rgba(16, 185, 129, 0.22)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(52, 211, 153, 0.65)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.fillStyle = '#6ee7b7';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(statusText, statusX + 15, 69);
+
+  // Summary boxes inside header bottom
+  const allRows = [...input.officials, ...input.members];
+  const totalPresentTicks = allRows.reduce((sum, r) => sum + r.presentTotal, 0);
+  const totalAbsentTicks = allRows.reduce((sum, r) => sum + r.absentTotal, 0);
+
+  const boxGap = 14;
+  const boxW = (contentW - 48 - boxGap * 2) / 3;
+  const boxY = 146;
+  const boxH = 58;
+
+  const summaryItems = [
+    {
+      label: 'TOTAL PRESENT',
+      value: String(totalPresentTicks),
+      bg: 'rgba(16, 185, 129, 0.16)',
+      border: 'rgba(52, 211, 153, 0.45)',
+      valColor: '#6ee7b7',
+    },
+    {
+      label: 'TOTAL ABSENT',
+      value: String(totalAbsentTicks),
+      bg: 'rgba(239, 68, 68, 0.16)',
+      border: 'rgba(248, 113, 113, 0.45)',
+      valColor: '#fca5a5',
+    },
+    {
+      label: 'REGISTERED',
+      value: String(allRows.length),
+      bg: 'rgba(168, 85, 247, 0.16)',
+      border: 'rgba(192, 132, 252, 0.45)',
+      valColor: '#e9d5ff',
+    },
+  ];
+
+  summaryItems.forEach((item, idx) => {
+    const bx = padX + 24 + idx * (boxW + boxGap);
+    drawRoundedRect(ctx, bx, boxY, boxW, boxH, 14);
+    ctx.fillStyle = item.bg;
+    ctx.fill();
+    ctx.strokeStyle = item.border;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#cbd5e1';
+    ctx.font = '700 13px "Plus Jakarta Sans", sans-serif';
+    ctx.fillText(item.label, bx + 16, boxY + boxH / 2);
+
+    ctx.textAlign = 'right';
+    ctx.fillStyle = item.valColor;
+    ctx.font = '900 24px Outfit, sans-serif';
+    ctx.fillText(item.value, bx + boxW - 16, boxY + boxH / 2);
+  });
+
+  const drawWeeklyFormSection = (
+    startY: number,
+    title: string,
+    accentColor: string,
+    rows: WeeklyAttendanceRowItem[],
+    emptyLabel: string
+  ): number => {
+    const secPresent = rows.reduce((s, r) => s + r.presentTotal, 0);
+    const secAbsent = rows.reduce((s, r) => s + r.absentTotal, 0);
+
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = accentColor;
+    ctx.font = '900 20px Outfit, sans-serif';
+    ctx.fillText(title, padX + 4, startY + 26);
+
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#cbd5e1';
+    ctx.font = '700 14px "Plus Jakarta Sans", sans-serif';
+    ctx.fillText(
+      `Present: ${secPresent}   ·   Absent: ${secAbsent}   ·   Members: ${rows.length}`,
+      padX + contentW - 4,
+      startY + 26
+    );
+
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+    ctx.fillRect(padX, startY + 50, contentW, 1);
+
+    let y = startY + sectionHeaderH;
+
+    if (rows.length === 0) {
+      drawRoundedRect(ctx, padX, y, contentW, rowH, 16);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '600 15px "Plus Jakarta Sans", sans-serif';
+      ctx.fillText(emptyLabel, padX + contentW / 2, y + rowH / 2);
+      return y + rowH + rowGap;
+    }
+
+    rows.forEach((row, idx) => {
+      drawRoundedRect(ctx, padX, y, contentW, rowH, 16);
+      const hasMorePresent = row.presentTotal >= row.absentTotal && row.presentTotal > 0;
+      ctx.fillStyle = hasMorePresent
+        ? 'rgba(16, 185, 129, 0.09)'
+        : 'rgba(168, 85, 247, 0.08)';
+      ctx.fill();
+      ctx.strokeStyle = hasMorePresent
+        ? 'rgba(52, 211, 153, 0.32)'
+        : 'rgba(192, 132, 252, 0.25)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Index number
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '700 14px monospace';
+      ctx.fillText(`${String(idx + 1).padStart(2, '0')}.`, padX + 20, y + 28);
+
+      // Name + Role + Tagname on left
+      const textStartX = padX + 56;
+      const chipW = 52;
+      const chipH = 54;
+      const chipGap = 6;
+      const totalBoxW = 134;
+      const totalDaysCount = Math.max(1, row.days.length);
+      const tx = padX + contentW - totalBoxW - 16;
+      const chipsStartX = tx - 10 - (totalDaysCount * chipW + (totalDaysCount - 1) * chipGap);
+      const maxNameW = Math.max(160, chipsStartX - textStartX - 16);
+
+      const nameAndRole = `${row.member.displayName.toUpperCase()} (${row.member.roleTitle})`;
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '800 15px "Plus Jakarta Sans", sans-serif';
+      ctx.textBaseline = 'top';
+      ctx.fillText(truncateText(ctx, nameAndRole, maxNameW), textStartX, y + 16);
+
+      const tagLine = formatTagnameUppercase(row.member.tagname);
+      ctx.fillStyle = '#d8b4fe';
+      ctx.font = '600 13px monospace';
+      ctx.fillText(truncateText(ctx, tagLine, maxNameW), textStartX, y + 42);
+
+      // Right Area: MON..SUN pills + TOTAL= pill
+      row.days.forEach((d, dIdx) => {
+        const cx = chipsStartX + dIdx * (chipW + chipGap);
+        const cy = y + (rowH - chipH) / 2;
+        drawRoundedRect(ctx, cx, cy, chipW, chipH, 10);
+        if (d.state === 'present') {
+          ctx.fillStyle = 'rgba(16, 185, 129, 0.20)';
+          ctx.strokeStyle = 'rgba(52, 211, 153, 0.5)';
+        } else if (d.state === 'absent') {
+          ctx.fillStyle = 'rgba(239, 68, 68, 0.18)';
+          ctx.strokeStyle = 'rgba(248, 113, 113, 0.45)';
+        } else {
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+        }
+        ctx.fill();
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillStyle = '#cbd5e1';
+        ctx.font = '700 10px monospace';
+        ctx.fillText(d.shortName, cx + chipW / 2, cy + 8);
+
+        ctx.textBaseline = 'bottom';
+        ctx.font = '800 12px monospace';
+        ctx.fillStyle =
+          d.state === 'present'
+            ? '#6ee7b7'
+            : d.state === 'absent'
+            ? '#fca5a5'
+            : '#94a3b8';
+        ctx.fillText(
+          d.state === 'present' ? 'P' : d.state === 'absent' ? 'A' : '—',
+          cx + chipW / 2,
+          cy + chipH - 8
+        );
+      });
+
+      // TOTAL= box
+      const ty = y + (rowH - chipH) / 2;
+      drawRoundedRect(ctx, tx, ty, totalBoxW, chipH, 12);
+      ctx.fillStyle = 'rgba(168, 85, 247, 0.20)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(192, 132, 252, 0.48)';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillStyle = '#e9d5ff';
+      ctx.font = '800 10px monospace';
+      ctx.fillText('TOTAL =', tx + totalBoxW / 2, ty + 8);
+
+      ctx.textBaseline = 'bottom';
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '900 13px monospace';
+      ctx.fillText(`${row.presentTotal}P · ${row.absentTotal}A`, tx + totalBoxW / 2, ty + chipH - 8);
+
+      y += rowH + rowGap;
+    });
+
+    return y;
+  };
+
+  let nextY = headerHeight;
+  nextY = drawWeeklyFormSection(
+    nextY,
+    'FORM 1 · OFFICIALS WEEKLY ATTENDANCE TOTAL',
+    '#fcd34d',
+    input.officials,
+    input.lang === 'tl' ? 'Walang nakarehistrong Official' : 'No registered Officials'
+  );
+
+  nextY += sectionGap;
+  nextY = drawWeeklyFormSection(
+    nextY,
+    'FORM 2 · MEMBERS WEEKLY ATTENDANCE TOTAL',
+    '#a5b4fc',
+    input.members,
+    input.lang === 'tl' ? 'Walang nakarehistrong Miyembro' : 'No registered Members'
+  );
+
+  // Footer
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = '600 13px "Plus Jakarta Sans", sans-serif';
+  ctx.fillText(
+    'Z.V.R · Zeal · Victory · Respect  |  Weekly Attendance Total (Mon–Sun)',
+    padX,
+    totalHeight - 36
+  );
+
+  ctx.textAlign = 'right';
+  const generatedTime = new Date().toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+  ctx.fillText(
+    input.lang === 'tl' ? `Nabuo: ${generatedTime}` : `Generated: ${generatedTime}`,
+    padX + contentW,
+    totalHeight - 36
+  );
+
+  const dataUrl = canvas.toDataURL('image/png');
+  const blob = await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob((b) => {
+      if (b) resolve(b);
+      else reject(new Error('Failed to export weekly attendance image blob'));
+    }, 'image/png');
+  });
+
+  return { dataUrl, blob };
+}

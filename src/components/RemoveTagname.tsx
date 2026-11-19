@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Trash2, AlertCircle, CheckCircle2, UserX, UserCheck, ExternalLink, UserPlus, Search, Lock } from 'lucide-react';
+import { Shield, Trash2, AlertCircle, CheckCircle2, UserX, UserCheck, ExternalLink, UserPlus, Search, Lock, Flag } from 'lucide-react';
 import { ClanMember, CLAN_FB_PROFILE_LINK, CLAN_LOGO_URL, RegisteredAccount, getAttendanceDateKey, formatTagnameUppercase, isOfficialRole } from '../data/clanData';
 import { sounds } from '../utils/soundEffects';
 import { realtimeClient, OnlineMemberRecord } from '../utils/realtimeClient';
@@ -9,6 +9,7 @@ interface RemoveTagnameProps {
   lang: 'tl' | 'en';
   onGoToLogin: () => void;
   onGoToCreateTagname?: () => void;
+  onOpenReport?: () => void;
   onlineUsers?: OnlineMemberRecord[];
 }
 
@@ -17,6 +18,7 @@ export const RemoveTagname: React.FC<RemoveTagnameProps> = ({
   lang,
   onGoToLogin,
   onGoToCreateTagname,
+  onOpenReport,
   onlineUsers = []
 }) => {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -274,10 +276,25 @@ export const RemoveTagname: React.FC<RemoveTagnameProps> = ({
             </span>
           </div>
           {isAdmin ? (
-            <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 flex items-center gap-1">
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              {lang === 'tl' ? `Admin Permission (${loggedInMember?.roleTitle})` : `Admin Permission (${loggedInMember?.roleTitle})`}
-            </span>
+            <div className="flex items-center gap-2 flex-wrap">
+              {onOpenReport && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    sounds.playClick();
+                    onOpenReport();
+                  }}
+                  className="text-[11px] font-bold px-3 py-1 rounded-full bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 border border-rose-400/40 flex items-center gap-1.5 cursor-pointer transition-colors"
+                >
+                  <Flag className="w-3.5 h-3.5 text-rose-300" />
+                  <span>Report Room</span>
+                </button>
+              )}
+              <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 flex items-center gap-1">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                {lang === 'tl' ? `Admin Permission (${loggedInMember?.roleTitle})` : `Admin Permission (${loggedInMember?.roleTitle})`}
+              </span>
+            </div>
           ) : (
             <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/30 flex items-center gap-1">
               <Lock className="w-3.5 h-3.5" />

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle2, MessageCircle, Copy, Check, ExternalLink, ShieldCheck, ArrowRight, Sparkles, UserCheck, Settings } from 'lucide-react';
-import { ClanMember, CLAN_FB_PROFILE_LINK, CLAN_LOGO_URL, CLAN_MOTTO, formatTagnameUppercase } from '../data/clanData';
+import { CheckCircle2, MessageCircle, Copy, Check, ExternalLink, ShieldCheck, ArrowRight, Sparkles, UserCheck, Settings, Flag } from 'lucide-react';
+import { ClanMember, CLAN_FB_PROFILE_LINK, CLAN_LOGO_URL, CLAN_MOTTO, formatTagnameUppercase, isOfficialMember } from '../data/clanData';
 import { sounds } from '../utils/soundEffects';
 
 interface VerifiedScreenProps {
@@ -8,6 +8,7 @@ interface VerifiedScreenProps {
   onExploreClan: () => void;
   onEnterRoom: () => void;
   onOpenSettings?: () => void;
+  onOpenReport?: () => void;
   lang: 'tl' | 'en';
 }
 
@@ -16,9 +17,11 @@ export const VerifiedScreen: React.FC<VerifiedScreenProps> = ({
   onExploreClan,
   onEnterRoom,
   onOpenSettings,
+  onOpenReport,
   lang,
 }) => {
   const [copiedTag, setCopiedTag] = useState(false);
+  const isOfficial = isOfficialMember(member);
 
   const handleCopyTag = () => {
     sounds.playClick();
@@ -148,6 +151,20 @@ export const VerifiedScreen: React.FC<VerifiedScreenProps> = ({
             >
               <Settings className="w-4 h-4 text-purple-300" />
               <span>{lang === 'tl' ? 'Settings · Mga Opsyon' : 'Settings · Preferences'}</span>
+            </button>
+          )}
+
+          {isOfficial && onOpenReport && (
+            <button
+              type="button"
+              onClick={() => {
+                sounds.playClick();
+                onOpenReport();
+              }}
+              className="w-full py-2.5 px-3 bg-rose-500/15 hover:bg-rose-500/25 text-rose-200 hover:text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all border border-rose-400/35 cursor-pointer min-h-[42px]"
+            >
+              <Flag className="w-4 h-4 text-rose-300" />
+              <span>Report Room (Officials Only)</span>
             </button>
           )}
         </div>

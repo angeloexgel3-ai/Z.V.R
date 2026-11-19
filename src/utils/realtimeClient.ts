@@ -84,7 +84,7 @@ type PresenceCallback = (users: OnlineMemberRecord[], joined?: OnlineMemberRecor
 type ChatCallback = (msg: ChatMessage) => void;
 type AttendanceCallback = (data: { dateKey: string; map: Record<string, { isPresent: boolean; timeCheckedIn?: string }>; updatedMemberId?: string; isPresent?: boolean; displayName?: string; tagname?: string }) => void;
 type PinCallback = (pin: TikTokLivePin | null) => void;
-type InitCallback = (state: { onlineUsers: OnlineMemberRecord[]; messages: ChatMessage[]; attendanceMap: Record<string, { isPresent: boolean; timeCheckedIn?: string }>; todayDateKey: string; currentLivePin: TikTokLivePin | null; pendingRegistrations?: any[]; suspendedMembers?: any[]; registeredAccounts?: RegisteredAccount[]; removedTagnames?: string[]; voiceParticipants?: VoiceParticipant[] }) => void;
+type InitCallback = (state: { onlineUsers: OnlineMemberRecord[]; messages: ChatMessage[]; attendanceMap: Record<string, { isPresent: boolean; timeCheckedIn?: string }>; weeklyAttendanceMap?: Record<string, Record<string, { isPresent: boolean; timeCheckedIn?: string }>>; todayDateKey: string; currentLivePin: TikTokLivePin | null; pendingRegistrations?: any[]; suspendedMembers?: any[]; registeredAccounts?: RegisteredAccount[]; removedTagnames?: string[]; voiceParticipants?: VoiceParticipant[] }) => void;
 type TypingCallback = (data: TypingEvent) => void;
 type VoiceUpdateCallback = (participants: VoiceParticipant[], joined?: VoiceParticipant, left?: VoiceParticipant) => void;
 type VoiceAudioCallback = (data: { senderTagname: string; senderName: string; audioChunk: string; timestamp: number }) => void;
@@ -139,6 +139,7 @@ class RealtimeClient {
     onlineUsers: OnlineMemberRecord[];
     messages: ChatMessage[];
     attendanceMap: Record<string, { isPresent: boolean; timeCheckedIn?: string }>;
+    weeklyAttendanceMap?: Record<string, Record<string, { isPresent: boolean; timeCheckedIn?: string }>>;
     todayDateKey: string;
     currentLivePin: TikTokLivePin | null;
     pendingRegistrations?: any[];
@@ -257,6 +258,41 @@ class RealtimeClient {
     return merged;
   }
 
+  private mergeWeeklyAttendance(
+    serverWeekly?: Record<string, Record<string, { isPresent: boolean; timeCheckedIn?: string }>>,
+    todayDateKey?: string,
+    todayMerged?: Record<string, { isPresent: boolean; timeCheckedIn?: string }>
+  ): Record<string, Record<string, { isPresent: boolean; timeCheckedIn?: string }>> {
+    const mergedWeekly: Record<string, Record<string, { isPresent: boolean; timeCheckedIn?: string }>> = {};
+    if (serverWeekly && typeof serverWeekly === 'object') {
+      for (const [dateKey, dayMap] of Object.entries(serverWeekly)) {
+        if (dateKey && dayMap && typeof dayMap === 'object') {
+          let localDayMap: Record<string, { isPresent: boolean; timeCheckedIn?: string }> = {};
+          if (typeof window !== 'undefined') {
+            try {
+              const saved = localStorage.getItem(`zvr_attendance_${dateKey}`);
+              if (saved) {
+                const parsed = JSON.parse(saved);
+                if (parsed && typeof parsed === 'object') localDayMap = parsed;
+              }
+            } catch {}
+          }
+          const combined = { ...localDayMap, ...dayMap };
+          mergedWeekly[dateKey] = combined;
+          if (typeof window !== 'undefined') {
+            try {
+              localStorage.setItem(`zvr_attendance_${dateKey}`, JSON.stringify(combined));
+            } catch {}
+          }
+        }
+      }
+    }
+    if (todayDateKey && todayMerged) {
+      mergedWeekly[todayDateKey] = todayMerged;
+    }
+    return mergedWeekly;
+  }
+
   public async fetchInitialState() {
     if (typeof window === 'undefined') return;
     try {
@@ -273,11 +309,13 @@ class RealtimeClient {
         const mergedAttendance = data.todayDateKey
           ? this.mergeAndPersistAttendance(data.todayDateKey, data.attendanceMap || {})
           : data.attendanceMap || {};
+        const mergedWeekly = this.mergeWeeklyAttendance(data.weeklyAttendanceMap, data.todayDateKey, mergedAttendance);
 
         const normalizedData = {
           ...data,
           registeredAccounts: mergedAccounts,
           attendanceMap: mergedAttendance,
+          weeklyAttendanceMap: mergedWeekly,
         };
         this.latestState = normalizedData;
 
@@ -395,10 +433,12 @@ class RealtimeClient {
             const mergedAttendance = data.todayDateKey
               ? this.mergeAndPersistAttendance(data.todayDateKey, data.attendanceMap || {})
               : data.attendanceMap || {};
+            const mergedWeekly = this.mergeWeeklyAttendance(data.weeklyAttendanceMap, data.todayDateKey, mergedAttendance);
             const normalizedData = {
               ...data,
               registeredAccounts: mergedAccounts,
               attendanceMap: mergedAttendance,
+              weeklyAttendanceMap: mergedWeekly,
             };
             this.latestState = normalizedData;
             this.initListeners.forEach((fn) => fn(normalizedData));
@@ -425,11 +465,13 @@ class RealtimeClient {
       const mergedAttendance = data.todayDateKey
         ? this.mergeAndPersistAttendance(data.todayDateKey, data.attendanceMap || {})
         : data.attendanceMap || {};
+      const mergedWeekly = this.mergeWeeklyAttendance(data.weeklyAttendanceMap, data.todayDateKey, mergedAttendance);
 
       const normalizedData = {
         ...data,
         registeredAccounts: mergedAccounts,
         attendanceMap: mergedAttendance,
+        weeklyAttendanceMap: mergedWeekly,
       };
       this.latestState = normalizedData;
       this.initListeners.forEach((fn) => fn(normalizedData));

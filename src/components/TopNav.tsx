@@ -5,9 +5,19 @@ import { sounds } from '../utils/soundEffects';
 import { PWAInstallButton } from './PWAInstallButton';
 import { clearAppCacheAndOptimize } from '../utils/cacheManager';
 
+type PortalTabId =
+  | 'login'
+  | 'room'
+  | 'roster'
+  | 'generator'
+  | 'rules'
+  | 'card'
+  | 'remove_tagname'
+  | 'weekly_attendance';
+
 interface TopNavProps {
-  currentTab: 'login' | 'room' | 'roster' | 'generator' | 'rules' | 'card' | 'remove_tagname';
-  setCurrentTab: (tab: 'login' | 'room' | 'roster' | 'generator' | 'rules' | 'card' | 'remove_tagname') => void;
+  currentTab: PortalTabId;
+  setCurrentTab: (tab: PortalTabId) => void;
   loggedInMember: ClanMember | null;
   onLogout: () => void;
   lang: 'tl' | 'en';
@@ -41,9 +51,9 @@ export const TopNav: React.FC<TopNavProps> = ({
     if (!next) sounds.playClick();
   };
 
-  const handleTabClick = (tabId: 'login' | 'room' | 'roster' | 'generator' | 'rules' | 'card' | 'remove_tagname') => {
+  const handleTabClick = (tabId: PortalTabId) => {
     sounds.playClick();
-    if (!loggedInMember && tabId === 'room') {
+    if (!loggedInMember && tabId !== 'login') {
       if (onRequireLogin) {
         onRequireLogin();
       }
@@ -56,15 +66,16 @@ export const TopNav: React.FC<TopNavProps> = ({
   const navLinks = [
     { id: 'room' as const, labelTl: loggedInMember ? 'ROOM GC 🟢' : 'ROOM GC 🔒', labelEn: loggedInMember ? 'ROOM GC 🟢' : 'ROOM GC 🔒' },
     { id: 'login' as const, labelTl: loggedInMember ? 'PORTAL' : 'LOG IN', labelEn: loggedInMember ? 'PORTAL' : 'LOG IN' },
-    { id: 'generator' as const, labelTl: 'ATTENDANCE 🟢🔴', labelEn: 'ATTENDANCE 🟢🔴' },
-    { id: 'roster' as const, labelTl: 'ROSTER', labelEn: 'ROSTER' },
-    { id: 'rules' as const, labelTl: 'RULES', labelEn: 'RULES' },
-    { id: 'remove_tagname' as const, labelTl: 'REMOVE TAGNAME', labelEn: 'REMOVE TAGNAME' },
+    { id: 'generator' as const, labelTl: loggedInMember ? 'ATTENDANCE 🟢🔴' : 'ATTENDANCE 🔒', labelEn: loggedInMember ? 'ATTENDANCE 🟢🔴' : 'ATTENDANCE 🔒' },
+    { id: 'roster' as const, labelTl: loggedInMember ? 'ROSTER' : 'ROSTER 🔒', labelEn: loggedInMember ? 'ROSTER' : 'ROSTER 🔒' },
+    { id: 'rules' as const, labelTl: loggedInMember ? 'RULES' : 'RULES 🔒', labelEn: loggedInMember ? 'RULES' : 'RULES 🔒' },
+    { id: 'remove_tagname' as const, labelTl: loggedInMember ? 'REMOVE TAGNAME' : 'REMOVE TAGNAME 🔒', labelEn: loggedInMember ? 'REMOVE TAGNAME' : 'REMOVE TAGNAME 🔒' },
+    { id: 'weekly_attendance' as const, labelTl: loggedInMember ? 'WEEKLY ATTENDANCE TOTAL' : 'WEEKLY ATTENDANCE TOTAL 🔒', labelEn: loggedInMember ? 'WEEKLY ATTENDANCE TOTAL' : 'WEEKLY ATTENDANCE TOTAL 🔒' },
   ];
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-white/10 liquid-glass-card-subtle backdrop-blur-2xl">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4 md:gap-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3 md:gap-6">
         {/* Zone 1: Brand Wordmark */}
         <button
           onClick={() => {
@@ -92,14 +103,14 @@ export const TopNav: React.FC<TopNavProps> = ({
         </button>
 
         {/* Zone 2: Navigation Links */}
-        <nav className="hidden sm:flex items-center gap-1 md:gap-2 text-sm font-medium">
+        <nav className="hidden sm:flex items-center gap-1 text-sm font-medium overflow-x-auto min-w-0 py-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {navLinks.map((link) => {
             const isActive = currentTab === link.id;
             return (
               <button
                 key={link.id}
                 onClick={() => handleTabClick(link.id)}
-                className={`px-3 py-1.5 rounded-xl text-xs md:text-sm transition-all whitespace-nowrap shrink-0 cursor-pointer flex items-center gap-1.5 ${
+                className={`px-2.5 py-1.5 rounded-xl text-xs transition-all whitespace-nowrap shrink-0 cursor-pointer flex items-center gap-1.5 ${
                   isActive
                     ? 'text-white bg-white/15 border border-white/25 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)] font-semibold'
                     : 'text-purple-200/70 hover:text-white hover:bg-white/5'

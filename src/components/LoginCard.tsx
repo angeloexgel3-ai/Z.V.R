@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Shield, Eye, EyeOff, AlertCircle, Sparkles, CheckCircle2, User, KeyRound, ExternalLink, Flag, UserX, X, Lock, Check, UserPlus, Clock, Crown, ThumbsUp, ThumbsDown } from 'lucide-react';
-import { ClanMember, CLAN_PASSCODE, CLAN_LOGO_URL, CLAN_MOTTO, CLAN_FOUNDED_DATE, CLAN_FB_PROFILE_LINK, RegisteredAccount, formatTagnameUppercase, getAttendanceDateKey } from '../data/clanData';
+import { Shield, Eye, EyeOff, AlertCircle, Sparkles, CheckCircle2, User, KeyRound, ExternalLink, UserX, X, Lock, Check, UserPlus, Clock, Crown, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { ClanMember, CLAN_PASSCODE, CLAN_LOGO_URL, CLAN_MOTTO, CLAN_FOUNDED_DATE, CLAN_FB_PROFILE_LINK, RegisteredAccount, formatTagnameUppercase } from '../data/clanData';
 import { sounds } from '../utils/soundEffects';
 
 export interface PendingRegistration {
@@ -165,19 +165,14 @@ export const LoginCard: React.FC<LoginCardProps> = ({
   const [approvalPasscode, setApprovalPasscode] = useState('');
   const [isApprovalUnlocked, setIsApprovalUnlocked] = useState(false);
 
-  // Report Modal State
-  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
-  const [reportTargetTag, setReportTargetTag] = useState('');
-  const [reportReason, setReportReason] = useState('Reason(e.g rude in GC)');
-  const [reportAction, setReportAction] = useState<string>('SUSPENSION 1DAY');
   const [showSuspendedListModal, setShowSuspendedListModal] = useState(false);
 
-  // Notify parent when any login sub-modal (Create Tagname, Report, Approval, Suspended) is open so footer stays hidden
+  // Notify parent when any login sub-modal (Create Tagname, Approval, Suspended) is open so footer stays hidden
   useEffect(() => {
     if (onSubModalChange) {
-      onSubModalChange(isCreateModalOpen || isReportModalOpen || isApprovalModalOpen || showSuspendedListModal);
+      onSubModalChange(isCreateModalOpen || isApprovalModalOpen || showSuspendedListModal);
     }
-  }, [isCreateModalOpen, isReportModalOpen, isApprovalModalOpen, showSuspendedListModal, onSubModalChange]);
+  }, [isCreateModalOpen, isApprovalModalOpen, showSuspendedListModal, onSubModalChange]);
 
   const suspendedTagnames = suspendedList.map((s) => s.tagname);
 
@@ -298,7 +293,7 @@ export const LoginCard: React.FC<LoginCardProps> = ({
   return (
     <div className="w-full max-w-[420px] mx-auto relative">
       {/* Subtle drifting Christmas snowfall on Login screen */}
-      {!isCreateModalOpen && !isReportModalOpen && !isApprovalModalOpen && !showSuspendedListModal && (
+      {!isCreateModalOpen && !isApprovalModalOpen && !showSuspendedListModal && (
         <LoginSnowfallOverlay />
       )}
 
@@ -501,16 +496,12 @@ export const LoginCard: React.FC<LoginCardProps> = ({
                 type="button"
                 onClick={() => {
                   sounds.playClick();
-                  if (onGoToRemoveTagname) {
-                    onGoToRemoveTagname();
-                  } else {
-                    onOpenForgotModal();
-                  }
+                  onOpenForgotModal();
                 }}
                 className="forgot-link text-purple-300 hover:text-purple-100 hover:underline transition-colors focus:outline-none cursor-pointer font-medium"
-                title={lang === 'tl' ? 'Pumunta sa REMOVE TAGNAME kung nakalimutan ang password' : 'Go to REMOVE TAGNAME if you forgot your password'}
+                title={lang === 'tl' ? 'Kailangan ng tulong sa password?' : 'Need help with your password?'}
               >
-                {lang === 'tl' ? 'Nakalimutan ang password? (Remove Tagname)' : 'Forgot password? (Remove Tagname)'}
+                {lang === 'tl' ? 'Nakalimutan ang password?' : 'Forgot password?'}
               </button>
 
               <button
@@ -532,50 +523,35 @@ export const LoginCard: React.FC<LoginCardProps> = ({
               </button>
             </div>
 
-            <div className="flex items-center justify-between gap-2 pt-1 border-t border-white/5">
-              <button
-                type="button"
-                onClick={() => {
-                  sounds.playClick();
-                  setIsReportModalOpen(true);
-                }}
-                className="text-pink-400 hover:text-pink-300 font-bold flex items-center gap-1 transition-colors cursor-pointer text-[11px]"
-                title={lang === 'tl' ? 'Isumbong at tanggalin ang bastos na tagname sa portal' : 'Report and suspend rude tagname from portal'}
-              >
-                <Flag className="w-3.5 h-3.5 text-pink-400" />
-                <span>{lang === 'tl' ? 'Report (Bastos)' : 'Report (Rude)'}</span>
-              </button>
+            <div className="flex items-center justify-end gap-2 pt-1 border-t border-white/5">
+              {onGoToRemoveTagname && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    sounds.playClick();
+                    onGoToRemoveTagname();
+                  }}
+                  className="text-purple-300 hover:text-white font-bold flex items-center gap-1 transition-colors cursor-pointer text-[11px] bg-purple-900/30 px-2 py-0.5 rounded border border-purple-500/30"
+                  title={lang === 'tl' ? 'Pumunta sa Remove Tagname tab' : 'Go to Remove Tagname tab'}
+                >
+                  <UserX className="w-3.5 h-3.5 text-pink-400" />
+                  <span>Remove Tagname</span>
+                </button>
+              )}
 
-              <div className="flex items-center gap-2">
-                {onGoToRemoveTagname && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      sounds.playClick();
-                      onGoToRemoveTagname();
-                    }}
-                    className="text-purple-300 hover:text-white font-bold flex items-center gap-1 transition-colors cursor-pointer text-[11px] bg-purple-900/30 px-2 py-0.5 rounded border border-purple-500/30"
-                    title={lang === 'tl' ? 'Pumunta sa Remove Tagname tab' : 'Go to Remove Tagname tab'}
-                  >
-                    <UserX className="w-3.5 h-3.5 text-pink-400" />
-                    <span>Remove Tagname</span>
-                  </button>
-                )}
-
-                {suspendedList.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      sounds.playClick();
-                      setShowSuspendedListModal(true);
-                    }}
-                    className="text-purple-300 hover:text-white font-bold flex items-center gap-1 transition-colors cursor-pointer text-[11px]"
-                  >
-                    <UserX className="w-3.5 h-3.5 text-red-400" />
-                    <span>Suspended ({suspendedList.length})</span>
-                  </button>
-                )}
-              </div>
+              {suspendedList.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    sounds.playClick();
+                    setShowSuspendedListModal(true);
+                  }}
+                  className="text-purple-300 hover:text-white font-bold flex items-center gap-1 transition-colors cursor-pointer text-[11px]"
+                >
+                  <UserX className="w-3.5 h-3.5 text-red-400" />
+                  <span>Suspended ({suspendedList.length})</span>
+                </button>
+              )}
             </div>
           </div>
         </form>
@@ -1121,221 +1097,7 @@ export const LoginCard: React.FC<LoginCardProps> = ({
         </div>
       )}
 
-      {/* REPORT BASTOS MODAL */}
-      {isReportModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xl animate-fade-in text-left">
-          <div className="w-full max-w-md liquid-glass-panel rounded-3xl p-6 relative overflow-hidden border border-pink-500/40 shadow-2xl">
-            <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-48 h-12 bg-pink-500/20 rounded-full blur-xl pointer-events-none"></div>
 
-            <button
-              onClick={() => {
-                sounds.playClick();
-                setIsReportModalOpen(false);
-              }}
-              className="absolute top-4 right-4 p-2 text-purple-200 hover:text-white bg-white/10 hover:bg-white/20 rounded-full transition-colors cursor-pointer"
-            >
-              <X className="w-4 h-4" />
-            </button>
-
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-11 h-11 rounded-2xl bg-pink-950/80 border border-pink-500/40 flex items-center justify-center text-pink-400 shadow-lg">
-                <Flag className="w-6 h-6 animate-pulse" />
-              </div>
-              <div>
-                <h3 className="text-base font-black text-white font-heading">
-                  {lang === 'tl' ? 'Isumbong ang Bastos na Miyembro' : 'Report Rude Member'}
-                </h3>
-                <p className="text-[11px] text-pink-300 font-mono">
-                  {lang === 'tl' ? 'I-suspend at tanggalin sa Login Portal' : 'Suspend and remove from Login Portal'}
-                </p>
-              </div>
-            </div>
-
-            <p className="text-xs text-purple-200/90 leading-relaxed mb-4 p-3 rounded-2xl bg-pink-500/10 border border-pink-500/20">
-              {lang === 'tl' ? (
-                <>
-                  Ang feature na ito ay para lamang sa mga bastos, nagmumura, o walang respeto sa GC. Ang mairereport na tagname ay{' '}
-                  <strong className="text-white">awtomatikong matatanggal sa Login Portal</strong> bilang suspension o paunang eviction.
-                </>
-              ) : (
-                <>
-                  This feature is strictly for rude, disrespectful, or abusive members in the GC. Any reported tagname will be{' '}
-                  <strong className="text-white">automatically removed from the Login Portal</strong> as suspension or eviction.
-                </>
-              )}
-            </p>
-
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (!reportTargetTag) return;
-
-                sounds.playError();
-                const targetAccount = registeredAccounts.find((a) => a.tagname === reportTargetTag);
-                const targetDisplayName = (targetAccount?.name || reportTargetTag).toUpperCase();
-
-                const newSuspendedRecord = {
-                  id: 'susp-' + Date.now(),
-                  tagname: reportTargetTag,
-                  name: targetDisplayName,
-                  reason: reportReason.trim() || 'Reason(e.g rude in GC)',
-                  action: reportAction,
-                  date: new Date().toLocaleDateString([], { month: 'numeric', day: 'numeric', year: '2-digit' })
-                };
-
-                const newSuspended = [...suspendedList, newSuspendedRecord];
-                setSuspendedList(newSuspended);
-                try {
-                  localStorage.setItem('zvr_suspended_members', JSON.stringify(newSuspended));
-                } catch {}
-
-                // Automatically remove from registered accounts & portal
-                const updatedAccounts = registeredAccounts.filter((a) => a.tagname !== reportTargetTag);
-                setRegisteredAccounts(updatedAccounts);
-                try {
-                  localStorage.setItem('zvr_registered_accounts', JSON.stringify(updatedAccounts));
-                  const channel = new BroadcastChannel('zvr_registered_accounts_channel');
-                  channel.postMessage({ type: 'ACCOUNT_REMOVED', accounts: updatedAccounts, tagname: reportTargetTag });
-                  channel.close();
-                } catch {}
-
-                // Remove from members
-                try {
-                  const savedMembers = localStorage.getItem('zvr_clan_members');
-                  if (savedMembers) {
-                    const parsedMembers: any[] = JSON.parse(savedMembers);
-                    localStorage.setItem(
-                      'zvr_clan_members',
-                      JSON.stringify(parsedMembers.filter((m) => m.tagname !== reportTargetTag))
-                    );
-                  }
-                } catch {}
-
-                // Remove from today's attendance (using 3:00 AM reset date key)
-                try {
-                  const todayKey = getAttendanceDateKey();
-                  const rawAtt = localStorage.getItem(`zvr_attendance_${todayKey}`);
-                  if (rawAtt) {
-                    const att = JSON.parse(rawAtt);
-                    if (targetAccount) delete att[targetAccount.id];
-                    delete att[reportTargetTag];
-                    localStorage.setItem(`zvr_attendance_${todayKey}`, JSON.stringify(att));
-                    const attCh = new BroadcastChannel('zvr_attendance_channel');
-                    attCh.postMessage({ type: 'UPDATE_ATTENDANCE', dateKey: todayKey, map: att });
-                    attCh.close();
-                  }
-                } catch {}
-
-                // If currently logged in user is the reported user, log out immediately
-                try {
-                  const savedLogin = localStorage.getItem('zvr_active_login');
-                  if (savedLogin) {
-                    const parsedLogin = JSON.parse(savedLogin);
-                    if (parsedLogin.tagname === reportTargetTag) {
-                      localStorage.removeItem('zvr_active_login');
-                      window.location.reload();
-                    }
-                  }
-                } catch {}
-
-                // Broadcast suspension to all other devices & server via WebSocket
-                realtimeClient.suspendAccount(reportTargetTag, newSuspendedRecord);
-
-                if (selectedTag.trim().toLowerCase() === reportTargetTag.trim().toLowerCase()) {
-                  setSelectedTag('');
-                }
-
-                setIsReportModalOpen(false);
-                setReportTargetTag('');
-                setErrorMsg(
-                  lang === 'tl'
-                    ? `🛑 Na-suspend/ban si ${targetDisplayName} (${reportAction}) at awtomatikong tinanggal sa Portal, Attendance, at Tagname list.`
-                    : `🛑 ${targetDisplayName} has been suspended/banned (${reportAction}) and removed from Portal, Attendance, and Tagname list.`
-                );
-              }}
-              className="space-y-4"
-            >
-              {/* REPORT: [(Choose a Tagname)] */}
-              <div>
-                <label className="block text-xs font-black text-purple-200 uppercase tracking-wider mb-1.5 font-heading">
-                  REPORT
-                </label>
-                <select
-                  required
-                  value={reportTargetTag}
-                  onChange={(e) => setReportTargetTag(e.target.value)}
-                  className="liquid-glass-input w-full text-white rounded-xl py-3 px-3.5 text-xs sm:text-sm outline-none appearance-none cursor-pointer font-mono uppercase"
-                >
-                  <option value="" disabled className="bg-slate-950 text-slate-400">
-                    [(Choose a Tagname)]
-                  </option>
-                  {registeredAccounts
-                    .filter((acc) => !suspendedTagnames.includes(acc.tagname))
-                    .map((acc) => (
-                      <option key={acc.id} value={acc.tagname} className="bg-slate-950 text-white font-mono">
-                        {formatTagnameUppercase(acc.tagname)}
-                      </option>
-                    ))}
-                </select>
-                {registeredAccounts.length === 0 && (
-                  <p className="text-[10px] text-pink-300 mt-1">
-                    {lang === 'tl'
-                      ? 'Walang rehistradong tagname na maaaring i-report sa kasalukuyan.'
-                      : 'No registered tagnames available to report right now.'}
-                  </p>
-                )}
-              </div>
-
-              {/* REASON: [(Reason(e.g rude in GC))] */}
-              <div>
-                <label className="block text-xs font-black text-purple-200 uppercase tracking-wider mb-1.5 font-heading">
-                  REASON
-                </label>
-                <select
-                  value={reportReason}
-                  onChange={(e) => setReportReason(e.target.value)}
-                  className="liquid-glass-input w-full text-white rounded-xl py-3 px-3.5 text-xs sm:text-sm outline-none cursor-pointer"
-                >
-                  <option value="Reason(e.g rude in GC)">[(Reason(e.g rude in GC))]</option>
-                  <option value="Pambabastos / Kawalan ng Respeto sa GC">Pambabastos / Kawalan ng Respeto sa GC</option>
-                  <option value="Nagmumura / Nagpo-post ng Hindi Angkop">Nagmumura / Nagpo-post ng Hindi Angkop</option>
-                  <option value="Spam / Harassment / Pambubully">Spam / Harassment / Pambubully</option>
-                  <option value="Hindi Pagsunod sa Alituntunin ng Z.V.R">Hindi Pagsunod sa Alituntunin ng Z.V.R</option>
-                </select>
-              </div>
-
-              {/* ACTION: (SUSPENSION 1DAY, 3DAYS, 7DAYS, EVICT /BAN PERMANENT) */}
-              <div>
-                <label className="block text-xs font-black text-purple-200 uppercase tracking-wider mb-1.5 font-heading">
-                  ACTION
-                </label>
-                <select
-                  value={reportAction}
-                  onChange={(e) => setReportAction(e.target.value)}
-                  className="liquid-glass-input w-full text-white rounded-xl py-3 px-3.5 text-xs sm:text-sm outline-none cursor-pointer font-bold text-pink-300"
-                >
-                  <option value="SUSPENSION 1DAY" className="bg-slate-950 text-white">SUSPENSION 1DAY</option>
-                  <option value="SUSPENSION 3DAYS" className="bg-slate-950 text-white">SUSPENSION 3DAYS</option>
-                  <option value="SUSPENSION 7DAYS" className="bg-slate-950 text-white">SUSPENSION 7DAYS</option>
-                  <option value="EVICT /BAN PERMANENT" className="bg-slate-950 text-red-400 font-bold">EVICT /BAN PERMANENT</option>
-                </select>
-              </div>
-
-              {/* BUTTON TAB: SUSPEND / BAN */}
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  disabled={!reportTargetTag}
-                  className="w-full py-3.5 bg-gradient-to-r from-red-600 via-pink-600 to-rose-600 hover:from-red-500 hover:to-rose-500 disabled:opacity-40 text-white font-black rounded-xl text-xs sm:text-sm tracking-wider shadow-lg cursor-pointer transition-all flex items-center justify-center gap-2 hover:scale-[1.01]"
-                >
-                  <UserX className="w-4 h-4" />
-                  <span>SUSPEND / BAN</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* SUSPENDED / EVICTED MEMBERS LIST MODAL */}
       {showSuspendedListModal && (

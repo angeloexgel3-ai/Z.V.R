@@ -47,6 +47,19 @@ export function isOfficialRole(roleTitle?: string): boolean {
   return officialRoles.some((r) => roleTitle.includes(r));
 }
 
+export function isOfficialMember(member?: ClanMember | null): boolean {
+  if (!member) return false;
+  const tagPrefix = member.tagname?.split('•')[0] || '';
+  return Boolean(
+    member.category === 'leadership' ||
+      isOfficialRole(member.roleTitle) ||
+      isOfficialRole(tagPrefix) ||
+      member.status === 'owner' ||
+      member.status === 'founder' ||
+      member.status === 'officer'
+  );
+}
+
 /**
  * Computes the attendance cycle date key (YYYY-MM-DD) in Philippines Time (UTC+8)
  * that resets automatically every day at 3:00 AM.
@@ -60,6 +73,57 @@ export function getAttendanceDateKey(now: Date = new Date()): string {
   const month = String(shifted.getUTCMonth() + 1).padStart(2, '0');
   const day = String(shifted.getUTCDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
+}
+
+export interface WorkweekDayInfo {
+  dayName: 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY' | 'SATURDAY' | 'SUNDAY';
+  shortName: 'MON' | 'TUE' | 'WED' | 'THU' | 'FRI' | 'SAT' | 'SUN';
+  dateKey: string;
+  formattedShort: string;
+}
+
+/**
+ * Returns the Monday–Sunday attendance cycle days for the current PH Time (UTC+8, 3:00 AM reset) week.
+ */
+export function getWorkweekDays(now: Date = new Date()): WorkweekDayInfo[] {
+  const shiftedMs = now.getTime() + (8 - 3) * 60 * 60 * 1000;
+  const shifted = new Date(shiftedMs);
+  const utcDay = shifted.getUTCDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+  const mondayOffset = utcDay === 0 ? -6 : 1 - utcDay;
+  const mondayMs = Date.UTC(
+    shifted.getUTCFullYear(),
+    shifted.getUTCMonth(),
+    shifted.getUTCDate() + mondayOffset
+  );
+
+  const dayMeta: Array<{ dayName: WorkweekDayInfo['dayName']; shortName: WorkweekDayInfo['shortName'] }> = [
+    { dayName: 'MONDAY', shortName: 'MON' },
+    { dayName: 'TUESDAY', shortName: 'TUE' },
+    { dayName: 'WEDNESDAY', shortName: 'WED' },
+    { dayName: 'THURSDAY', shortName: 'THU' },
+    { dayName: 'FRIDAY', shortName: 'FRI' },
+    { dayName: 'SATURDAY', shortName: 'SAT' },
+    { dayName: 'SUNDAY', shortName: 'SUN' },
+  ];
+
+  const dayMs = 24 * 60 * 60 * 1000;
+  return dayMeta.map((meta, idx) => {
+    const d = new Date(mondayMs + idx * dayMs);
+    const year = d.getUTCFullYear();
+    const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(d.getUTCDate()).padStart(2, '0');
+    const formattedShort = d.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      timeZone: 'UTC',
+    });
+    return {
+      dayName: meta.dayName,
+      shortName: meta.shortName,
+      dateKey: `${year}-${month}-${day}`,
+      formattedShort,
+    };
+  });
 }
 
 export const CLAN_PASSCODE = "ZVR09152025";
